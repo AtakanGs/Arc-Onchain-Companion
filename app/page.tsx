@@ -221,7 +221,7 @@ export default function Home() {
             {error && <p className="errorText">{error}</p>}
             <p className="micro">Built on Arc Testnet · Daily state lives onchain</p>
           </div>
-          <CompanionVisual label="Your companion is waiting." />
+          <CompanionVisual label="Your companion is waiting." mode="dormant" />
         </section>
       )}
 
@@ -238,7 +238,7 @@ export default function Home() {
             </div>
             <p className="micro">No answer gives you an advantage. It only shapes your companion&apos;s genesis identity.</p>
           </div>
-          <CompanionVisual label={birth.status === "loading" ? "Finding your Arc beginning…" : "Reading your signal…"} />
+          <CompanionVisual label={birth.status === "loading" ? "Finding your Arc beginning…" : "Reading your signal…"} mode="scan" />
         </section>
       )}
 
@@ -273,7 +273,7 @@ export default function Home() {
               <button className="secondaryButton" onClick={restartQuiz} disabled={mint.status === "pending" || mint.status === "confirmed"}>Retake personality</button>
             </div>
           </div>
-          <CompanionVisual label={`${name.trim() || result.family} · ${result.archetype}`} active />
+          <CompanionVisual label={`${name.trim() || result.family} · ${result.archetype}`} mode="awake" familyIndex={result.familyIndex} archetypeIndex={result.archetypeIndex} />
         </section>
       )}
 
@@ -286,13 +286,58 @@ export default function Home() {
   );
 }
 
-function CompanionVisual({ label, active = false }: { label: string; active?: boolean }) {
+function CompanionVisual({
+  label,
+  mode = "dormant",
+  familyIndex = 0,
+  archetypeIndex = 0,
+}: {
+  label: string;
+  mode?: "dormant" | "scan" | "awake";
+  familyIndex?: number;
+  archetypeIndex?: number;
+}) {
   return (
-    <div className={`companionCard ${active ? "active" : ""}`} aria-label="Companion visual prototype">
-      <div className="orb" />
-      <div className="placeholderBody">
-        <div className="ear left" /><div className="ear right" />
-        <div className="face"><span className="eye" /><span className="eye" /></div>
+    <div className={`companionCard ${mode} family-${familyIndex} archetype-${archetypeIndex}`} aria-label="Arc Companion genesis visual">
+      <div className="cardGrid" />
+      <div className="signalHalo haloOne" />
+      <div className="signalHalo haloTwo" />
+      <div className="orbit orbitOne"><i /></div>
+      <div className="orbit orbitTwo"><i /></div>
+      <div className="scanLine" />
+
+      <div className="creatureStage">
+        <div className="groundGlow" />
+        <div className="creatureShell">
+          <div className="antenna antennaLeft"><i /></div>
+          <div className="antenna antennaRight"><i /></div>
+          <div className="crest"><i /><i /><i /></div>
+          <div className="headFin finLeft" />
+          <div className="headFin finRight" />
+
+          <div className="creatureBody">
+            <div className="bodySheen" />
+            <div className="templeNode nodeLeft" />
+            <div className="templeNode nodeRight" />
+            <div className="facePlate">
+              <span className="eye eyeLeft"><i /></span>
+              <span className="eye eyeRight"><i /></span>
+              <span className="mouth" />
+            </div>
+            <div className="chestCore"><i /></div>
+            <div className="bodyMark markOne" />
+            <div className="bodyMark markTwo" />
+            <div className="arm armLeft"><i /></div>
+            <div className="arm armRight"><i /></div>
+            <div className="foot footLeft" />
+            <div className="foot footRight" />
+          </div>
+        </div>
+      </div>
+
+      <div className="statusRail">
+        <span><i /> ARC SIGNAL</span>
+        <span>{mode === "awake" ? "IDENTITY LOCKED" : mode === "scan" ? "SCANNING" : "DORMANT"}</span>
       </div>
       <div className="cardMeta"><span>GENESIS FORM</span><strong>{label}</strong></div>
     </div>
