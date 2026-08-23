@@ -1,8 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { keccak256, toHex } from "viem";
+import { createWalletClient, custom, keccak256 } from "viem";
+import { arcTestnet } from "viem/chains";
 import { ARCHETYPES, FAMILIES } from "../lib/companion";
+import { arcPublicClient } from "../lib/arc";
+import { arcCompanionAbi, arcCompanionAddress } from "../lib/contract";
 
 type EthereumProvider = {
   request(args: { method: string; params?: unknown[] }): Promise<unknown>;
@@ -11,6 +14,7 @@ type EthereumProvider = {
 type Option = { label: string; archetype: number };
 type Question = { title: string; options: Option[] };
 type BirthState = { status: "idle" | "loading" | "found" | "new" | "unavailable"; timestamp?: number };
+type MintState = { status: "idle" | "pending" | "confirmed" | "error"; hash?: `0x${string}`; message?: string };
 
 const QUESTIONS: Question[] = [
   {
@@ -70,15 +74,17 @@ export default function Home() {
   const [questionIndex, setQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<number[]>([]);
   const [birth, setBirth] = useState<BirthState>({ status: "idle" });
+  const [name, setName] = useState("");
+  const [mint, setMint] = useState<MintState>({ status: "idle" });
   const [error, setError] = useState("");
 
   const result = useMemo(() => {
     if (!address || answers.length !== QUESTIONS.length) return null;
     const counts = ARCHETYPES.map((_, index) => answers.filter((answer) => answer === index).length);
     const archetypeIndex = counts.reduce((best, count, index) => count > counts[best] ? index : best, 0);
-    const dna = keccak256(toHex(address.toLowerCase()));
+    const dna = keccak256(address.toLowerCase() as `0x${string}`);
     const familyIndex = Number(BigInt(dna) % 3n);
-    return { archetype: ARCHETYPES[archetypeIndex], family: FAMILIES[familyIndex], dna };
+    return { archetype: ARCHETYPES[archetypeIndex], archetypeIndex, family: FAMILIES[familyIndex], familyIndex, dna };
   }, [address, answers]);
 
   async function resolveBirth(walletAddress: string) {
@@ -146,15 +152,56 @@ export default function Home() {
   function restartQuiz() {
     setAnswers([]);
     setQuestionIndex(0);
+    setName("");
+    setMint({ status: "idle" });
     setStep("quiz");
   }
 
   function birthLabel() {
     if (birth.status === "loading") return "Finding your beginning…";
     if (birth.status === "found") return formatBirthDate(birth.timestamp);
-    if (birth.status === "new") return "Your adoption will mark day one";
+    if (birth.status === "new") return "Your mint will mark day one";
     if (birth.status === "unavailable") return "History temporarily unavailable";
     return "Not resolved yet";
+  }
+
+  async function mintCompanion() {
+    const trimmedName = name.trim();
+    if (!result || !address || !arcCompanionAddress) return;
+    if (trimmedName.length < 2 || trimmedName.length > 24) {
+      setMint({ status: "error", message: "Name must be 2–24 characters." });
+      return;
+    }
+    if (birth.status !== "found" && birth.status !== "new") {
+      setMint({ status: "error", message: "Your Arc birth must be resolved before minting." });
+      return;
+    }
+
+    const ethereum = (window as Window & { ethereum?: EthereumProvider }).ethereum;
+    if (!ethereum) {
+      setMint({ status: "error", message: "Wallet provider is unavailable." });
+      return;
+    }
+
+    try {
+      setMint({ status: "pending" });
+      const walletClient = createWalletClient({
+        account: address as `0x${string}`,
+        chain: arcTestnet,
+        transport: custom(ethereum),
+      });
+      const bornOnArc = birth.status === "found" ? BigInt(birth.timestamp ?? 0) : 0n;
+      const hash = await walletClient.writeContract({
+        address: arcCompanionAddress,
+        abi: arcCompanionAbi,
+        functionName: "mintCompanion",
+        args: [bornOnArc, result.archetypeIndex, trimmedName],
+      });
+      await arcPublicClient.waitForTransactionReceipt({ hash });
+      setMint({ status: "confirmed", hash });
+    } catch (cause) {
+      setMint({ status: "error", message: cause instanceof Error ? cause.message : "Mint failed." });
+    }
   }
 
   return (
@@ -206,11 +253,27 @@ export default function Home() {
               <div><span>FAMILY</span><strong>{result.family}</strong></div>
               <div><span>BORN ON ARC</span><strong>{birthLabel()}</strong></div>
             </div>
-            {birth.status === "unavailable" && <p className="micro">We never invent an Arc birth date. If the explorer history service is unavailable, you can retry later and the app will keep the value unset.</p>}
-            {birth.status === "new" && <p className="micro">No prior Arc transaction was found. When you mint your companion, that first Arc moment becomes its beginning.</p>}
-            <button onClick={restartQuiz}>Retake personality</button>
+            {birth.status === "unavailable" && <p className="micro">We never invent an Arc birth date. If explorer history is unavailable, minting stays locked until it can be resolved.</p>}
+            {birth.status === "new" && <p className="micro">No prior Arc transaction was found. The mint block timestamp will become this companion&apos;s onchain birth time.</p>}
+
+            <div className="nameBlock">
+              <label htmlFor="companion-name">NAME YOUR COMPANION</label>
+              <input id="companion-name" value={name} maxLength={24} onChange={(event) => setName(event.target.value)} placeholder="2–24 characters" disabled={mint.status === "confirmed"} />
+            </div>
+
+            {!arcCompanionAddress && <p className="deploymentNote">Mint becomes available automatically after the V1 contract is deployed and its address is configured.</p>}
+            {mint.status === "error" && <p className="errorText">{mint.message}</p>}
+            {mint.status === "confirmed" && mint.hash && (
+              <p className="successText">Born on Arc ✓ <a href={`https://testnet.arcscan.app/tx/${mint.hash}`} target="_blank" rel="noreferrer">View transaction</a></p>
+            )}
+            <div className="revealActions">
+              <button onClick={mintCompanion} disabled={!arcCompanionAddress || mint.status === "pending" || mint.status === "confirmed" || birth.status === "unavailable" || birth.status === "loading"}>
+                {mint.status === "pending" ? "Minting on Arc…" : mint.status === "confirmed" ? "Companion minted" : "Mint my companion"}
+              </button>
+              <button className="secondaryButton" onClick={restartQuiz} disabled={mint.status === "pending" || mint.status === "confirmed"}>Retake personality</button>
+            </div>
           </div>
-          <CompanionVisual label={`${result.family} · ${result.archetype}`} active />
+          <CompanionVisual label={`${name.trim() || result.family} · ${result.archetype}`} active />
         </section>
       )}
 
