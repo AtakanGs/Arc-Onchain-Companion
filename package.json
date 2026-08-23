@@ -8,10 +8,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "contracts:compile": "hardhat compile",
     "contracts:test": "hardhat test",
+    "test": "npm run contracts:test",
+    "ci": "npm run contracts:compile && npm run contracts:test && npm run typecheck && npm run build",
     "deploy:arc": "hardhat run scripts/deploy.cjs --network arcTestnet"
   },
   "dependencies": {
@@ -22,6 +23,7 @@
     "viem": "2.55.4"
   },
   "devDependencies": {
+    "@nomicfoundation/hardhat-chai-matchers": "2.1.0",
     "@nomicfoundation/hardhat-ethers": "3.1.0",
     "@types/node": "24.3.0",
     "@types/react": "19.1.12",
