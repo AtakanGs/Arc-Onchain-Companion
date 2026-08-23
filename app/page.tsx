@@ -10,6 +10,7 @@ type EthereumProvider = {
 
 type Option = { label: string; archetype: number };
 type Question = { title: string; options: Option[] };
+type BirthState = { status: "idle" | "loading" | "found" | "new" | "unavailable"; timestamp?: number };
 
 const QUESTIONS: Question[] = [
   {
@@ -58,11 +59,17 @@ function shortAddress(address: string) {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
 }
 
+function formatBirthDate(timestamp?: number) {
+  if (!timestamp) return "";
+  return new Intl.DateTimeFormat("en", { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(timestamp * 1000));
+}
+
 export default function Home() {
   const [address, setAddress] = useState("");
   const [step, setStep] = useState<"landing" | "quiz" | "reveal">("landing");
   const [questionIndex, setQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<number[]>([]);
+  const [birth, setBirth] = useState<BirthState>({ status: "idle" });
   const [error, setError] = useState("");
 
   const result = useMemo(() => {
@@ -73,6 +80,23 @@ export default function Home() {
     const familyIndex = Number(BigInt(dna) % 3n);
     return { archetype: ARCHETYPES[archetypeIndex], family: FAMILIES[familyIndex], dna };
   }, [address, answers]);
+
+  async function resolveBirth(walletAddress: string) {
+    setBirth({ status: "loading" });
+    try {
+      const response = await fetch(`/api/arc-birth?address=${encodeURIComponent(walletAddress)}`);
+      const payload = await response.json() as { bornOnArc?: number | null; available?: boolean };
+      if (payload.bornOnArc) {
+        setBirth({ status: "found", timestamp: payload.bornOnArc });
+      } else if (payload.available) {
+        setBirth({ status: "new" });
+      } else {
+        setBirth({ status: "unavailable" });
+      }
+    } catch {
+      setBirth({ status: "unavailable" });
+    }
+  }
 
   async function connect() {
     setError("");
@@ -103,6 +127,7 @@ export default function Home() {
 
       setAddress(accounts[0]);
       setStep("quiz");
+      void resolveBirth(accounts[0]);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Wallet connection was cancelled.");
     }
@@ -122,6 +147,14 @@ export default function Home() {
     setAnswers([]);
     setQuestionIndex(0);
     setStep("quiz");
+  }
+
+  function birthLabel() {
+    if (birth.status === "loading") return "Finding your beginning…";
+    if (birth.status === "found") return formatBirthDate(birth.timestamp);
+    if (birth.status === "new") return "Your adoption will mark day one";
+    if (birth.status === "unavailable") return "History temporarily unavailable";
+    return "Not resolved yet";
   }
 
   return (
@@ -158,7 +191,7 @@ export default function Home() {
             </div>
             <p className="micro">No answer gives you an advantage. It only shapes your companion&apos;s genesis identity.</p>
           </div>
-          <CompanionVisual label="Reading your signal…" />
+          <CompanionVisual label={birth.status === "loading" ? "Finding your Arc beginning…" : "Reading your signal…"} />
         </section>
       )}
 
@@ -171,9 +204,10 @@ export default function Home() {
             <div className="genesisFacts">
               <div><span>ARCHETYPE</span><strong>{result.archetype}</strong></div>
               <div><span>FAMILY</span><strong>{result.family}</strong></div>
-              <div><span>BORN ON ARC</span><strong>Resolving next</strong></div>
+              <div><span>BORN ON ARC</span><strong>{birthLabel()}</strong></div>
             </div>
-            <p className="micro">The first Arc activity resolver is intentionally not mocked. Once verified, that timestamp becomes the companion&apos;s real birth date.</p>
+            {birth.status === "unavailable" && <p className="micro">We never invent an Arc birth date. If the explorer history service is unavailable, you can retry later and the app will keep the value unset.</p>}
+            {birth.status === "new" && <p className="micro">No prior Arc transaction was found. When you mint your companion, that first Arc moment becomes its beginning.</p>}
             <button onClick={restartQuiz}>Retake personality</button>
           </div>
           <CompanionVisual label={`${result.family} · ${result.archetype}`} active />
