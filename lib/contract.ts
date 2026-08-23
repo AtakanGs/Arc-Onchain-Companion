@@ -65,4 +65,8 @@ export const arcCompanionAbi = [
   },
 ] as const;
 
-export const arcCompanionAddress = process.env.NEXT_PUBLIC_ARC_COMPANION_ADDRESS as `0x${string}` | undefined;
+export const ARC_COMPANION_TESTNET_ADDRESS = "0xAC4D30bf3c0CCAb37f1DCb2F84461AfED979C620" as const;
+
+export const arcCompanionAddress = (
+  process.env.NEXT_PUBLIC_ARC_COMPANION_ADDRESS || ARC_COMPANION_TESTNET_ADDRESS
+) as `0x${string}`;
