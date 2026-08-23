@@ -7,20 +7,20 @@ Arc Companion is a consumer dApp for Arc Testnet. Each wallet discovers a unique
 > Your history shapes who they are. Your actions shape who they become.
 
 ## Builder V1
-- Arc Testnet wallet connection.
+- Arc Testnet injected-wallet connection and network switching.
+- Five-question Web3 personality onboarding.
+- Deterministic wallet-based companion family preview.
 - One soulbound ERC-721 companion per wallet.
-- Deterministic companion DNA / 3-family foundation.
-- Web3 personality archetype stored with the companion.
 - Daily 2–3 action care session settled as one onchain transaction.
 - XP, streaks, Streak Shields, 7/30/100-day milestones.
 - One permanent branching evolution.
 - Dynamic metadata base URI foundation.
-- Next: first-Arc-activity resolver, polished onboarding/reveal, final visual asset system, avatar/share card, then one Circle App Kit Swap quest.
+- Next: verified first-Arc-activity resolver, naming + mint flow, final visual asset system, avatar/share card, then one Circle App Kit Swap quest.
 
 ## Arc Testnet
 - Chain ID: `5042002`
 - Native gas token: USDC
-- RPC: `https://rpc.testnet.arc.io`
+- RPC: `https://rpc.testnet.arc.network`
 - Explorer: `https://testnet.arcscan.app`
 
 Always re-check official Arc documentation before deployment because the testnet is evolving.
@@ -33,6 +33,9 @@ npm run contracts:compile
 npm run contracts:test
 npm run dev
 ```
+
+## Quality gate
+GitHub Actions runs contract compilation, contract tests, TypeScript checking and a production frontend build on pushes to `main`.
 
 ## Deploy
 Fund the deployer wallet with Arc Testnet gas USDC, set `DEPLOYER_PRIVATE_KEY` in `.env`, then:
