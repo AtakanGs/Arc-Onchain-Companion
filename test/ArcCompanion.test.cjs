@@ -26,14 +26,26 @@ describe("ArcCompanion", function () {
     expect(tokenId).to.equal(1n);
 
     const c = await contract.companion(tokenId);
+    const expectedDna = ethers.keccak256(alice.address);
     expect(c.name).to.equal("Kiro");
-    expect(c.family).to.be.lessThan(3n);
+    expect(c.dna).to.equal(expectedDna);
+    expect(c.family).to.equal(BigInt(expectedDna) % 3n);
 
     await expect(contract.connect(alice).mintCompanion(block.timestamp - DAY, 1, "KiroTwo"))
       .to.be.revertedWithCustomError(contract, "AlreadyHasCompanion");
 
     await expect(contract.connect(alice).transferFrom(alice.address, bob.address, tokenId))
       .to.be.revertedWithCustomError(contract, "Soulbound");
+  });
+
+  it("uses the mint block timestamp as birth time for a wallet with no prior Arc history", async function () {
+    const { contract, alice } = await deploy();
+    await contract.connect(alice).mintCompanion(0, 1, "Genesis");
+    const mintBlock = await ethers.provider.getBlock("latest");
+    const tokenId = await contract.companionOf(alice.address);
+    const c = await contract.companion(tokenId);
+    expect(c.bornOnArc).to.equal(BigInt(mintBlock.timestamp));
+    expect(c.adoptedAt).to.equal(BigInt(mintBlock.timestamp));
   });
 
   it("allows 2-3 daily actions and blocks duplicate daily care", async function () {
