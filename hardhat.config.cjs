@@ -1,4 +1,5 @@
 require("@nomicfoundation/hardhat-ethers");
+require("@nomicfoundation/hardhat-chai-matchers");
 
 const deployerPrivateKey = process.env.DEPLOYER_PRIVATE_KEY;
 
