@@ -10,12 +10,14 @@ Arc Companion is a consumer dApp for Arc Testnet. Each wallet discovers a unique
 - Arc Testnet injected-wallet connection and network switching.
 - Five-question Web3 personality onboarding.
 - Deterministic wallet-based companion family preview.
+- Verified first-Arc-activity resolver with a no-fake-data fallback.
+- Naming + real mint transaction flow.
 - One soulbound ERC-721 companion per wallet.
-- Daily 2–3 action care session settled as one onchain transaction.
+- Deterministic daily moments with 2–3 care actions settled as one onchain transaction.
 - XP, streaks, Streak Shields, 7/30/100-day milestones.
 - One permanent branching evolution.
 - Dynamic metadata base URI foundation.
-- Next: verified first-Arc-activity resolver, naming + mint flow, final visual asset system, avatar/share card, then one Circle App Kit Swap quest.
+- Next: final visual asset system, avatar/share card, then one Circle App Kit Swap quest.
 
 ## Arc Testnet
 - Chain ID: `5042002`
@@ -35,14 +37,24 @@ npm run dev
 ```
 
 ## Quality gate
-GitHub Actions runs contract compilation, contract tests, TypeScript checking and a production frontend build on pushes to `main`.
+GitHub Actions runs contract compilation, contract tests, TypeScript checking and a production frontend build on pushes to `main` and pull requests.
 
 ## Deploy
-Fund the deployer wallet with Arc Testnet gas USDC, set `DEPLOYER_PRIVATE_KEY` in `.env`, then:
+Use a dedicated Arc Testnet deployer wallet when possible. Never commit or share its private key. Put `DEPLOYER_PRIVATE_KEY` only in the ignored local `.env` file and fund the address with Arc Testnet USDC from the Circle Faucet.
+
+Run the safe preflight first:
+
+```bash
+npm run preflight:arc
+```
+
+It confirms the Arc Testnet chain ID, prints only the deployer public address and native gas balance, and refuses to proceed when gas is missing. Then deploy:
 
 ```bash
 npm run deploy:arc
 ```
+
+Copy the resulting contract address into `NEXT_PUBLIC_ARC_COMPANION_ADDRESS` for the frontend. Do not commit private keys or `.env` files.
 
 ## Product docs
 - `docs/PRODUCT_SPEC.md`
