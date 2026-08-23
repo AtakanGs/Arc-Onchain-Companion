@@ -65,19 +65,24 @@ contract ArcCompanion is ERC721, Ownable {
         _metadataBaseURI = metadataBaseURI_;
     }
 
+    /// @param bornOnArc Earliest verified Arc activity timestamp. Pass 0 for a wallet with no prior Arc history;
+    /// the mint block timestamp then becomes its birth timestamp.
     function mintCompanion(uint64 bornOnArc, uint8 archetype, string calldata companionName) external returns (uint256 tokenId) {
         if (companionOf[msg.sender] != 0) revert AlreadyHasCompanion();
-        if (bornOnArc == 0 || bornOnArc > block.timestamp) revert InvalidBirthTimestamp();
+        if (bornOnArc > block.timestamp) revert InvalidBirthTimestamp();
         if (archetype > 5) revert InvalidArchetype();
         bytes memory rawName = bytes(companionName);
         if (rawName.length < 2 || rawName.length > 24) revert InvalidName();
 
+        uint64 resolvedBirth = bornOnArc == 0 ? uint64(block.timestamp) : bornOnArc;
         tokenId = _nextTokenId++;
-        bytes32 dna = keccak256(abi.encodePacked(msg.sender, bornOnArc, tokenId));
+
+        // Stable genesis identity: the same wallet always resolves to the same DNA/family.
+        bytes32 dna = keccak256(abi.encodePacked(msg.sender));
         uint8 family = uint8(uint256(dna) % 3);
 
         _companions[tokenId] = Companion({
-            bornOnArc: bornOnArc,
+            bornOnArc: resolvedBirth,
             adoptedAt: uint64(block.timestamp),
             xp: 0,
             currentStreak: 0,
@@ -95,7 +100,7 @@ contract ArcCompanion is ERC721, Ownable {
         companionOf[msg.sender] = tokenId;
         _safeMint(msg.sender, tokenId);
 
-        emit CompanionMinted(tokenId, msg.sender, dna, family, archetype, bornOnArc);
+        emit CompanionMinted(tokenId, msg.sender, dna, family, archetype, resolvedBirth);
         emit MetadataUpdate(tokenId);
     }
 
