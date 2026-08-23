@@ -14,7 +14,7 @@ module.exports = {
   },
   networks: {
     arcTestnet: {
-      url: process.env.ARC_RPC_URL || "https://rpc.testnet.arc.io",
+      url: process.env.ARC_RPC_URL || "https://rpc.testnet.arc.network",
       chainId: 5042002,
       accounts: deployerPrivateKey ? [deployerPrivateKey] : []
     }
