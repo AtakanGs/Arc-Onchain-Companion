@@ -37,7 +37,7 @@ npm run dev
 ```
 
 ## Quality gate
-GitHub Actions runs contract compilation, contract tests, TypeScript checking and a production frontend build on pushes to `main` and pull requests.
+GitHub Actions runs contract compilation, contract tests, TypeScript checking and a production frontend build on pushes to `main` and pull requests. The local deploy environment explicitly depends on `dotenv`; it is not relying on a transitive package.
 
 ## Deploy
 Use a dedicated Arc Testnet deployer wallet when possible. Never commit or share its private key. Put `DEPLOYER_PRIVATE_KEY` only in the ignored local `.env` file and fund the address with Arc Testnet USDC from the Circle Faucet.
