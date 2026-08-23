@@ -13,6 +13,7 @@
     "contracts:test": "hardhat test",
     "test": "npm run contracts:test",
     "ci": "npm run contracts:compile && npm run contracts:test && npm run typecheck && npm run build",
+    "preflight:arc": "hardhat run scripts/preflight.cjs --network arcTestnet",
     "deploy:arc": "hardhat run scripts/deploy.cjs --network arcTestnet"
   },
   "dependencies": {
