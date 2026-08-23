@@ -1,7 +1,7 @@
 const hre = require("hardhat");
 
 async function main() {
-  const baseUri = process.env.METADATA_BASE_URI || "https://example.com/api/metadata/";
+  const baseUri = process.env.METADATA_BASE_URI || "";
   const ArcCompanion = await hre.ethers.getContractFactory("ArcCompanion");
   const contract = await ArcCompanion.deploy(baseUri);
   await contract.waitForDeployment();
