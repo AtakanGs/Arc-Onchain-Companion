@@ -24,6 +24,10 @@ Arc Companion is a consumer dApp for Arc Testnet. Each wallet discovers a unique
 - Native gas token: USDC
 - RPC: `https://rpc.testnet.arc.network`
 - Explorer: `https://testnet.arcscan.app`
+- Builder V1 contract: `0xAC4D30bf3c0CCAb37f1DCb2F84461AfED979C620`
+- Contract explorer: `https://testnet.arcscan.app/address/0xAC4D30bf3c0CCAb37f1DCb2F84461AfED979C620`
+
+The frontend defaults to the deployed Builder V1 contract above on Arc Testnet. `NEXT_PUBLIC_ARC_COMPANION_ADDRESS` can still override it for another deployment.
 
 Always re-check official Arc documentation before deployment because the testnet is evolving.
 
@@ -54,11 +58,12 @@ It confirms the Arc Testnet chain ID, prints only the deployer public address an
 npm run deploy:arc
 ```
 
-Copy the resulting contract address into `NEXT_PUBLIC_ARC_COMPANION_ADDRESS` for the frontend. Do not commit private keys or `.env` files.
+For alternate deployments, set `NEXT_PUBLIC_ARC_COMPANION_ADDRESS` in the frontend environment. Do not commit private keys or `.env` files.
 
 ## Product docs
 - `docs/PRODUCT_SPEC.md`
 - `docs/ARCHITECTURE.md`
+- `docs/DEPLOYMENT.md`
 
 ## Scope discipline
 V1 intentionally excludes farming, restaurant gameplay, marketplace, breeding, PvP, lending/borrowing, staking and custom-token deployment. The goal is a polished, finished consumer experience rather than a large feature list.
