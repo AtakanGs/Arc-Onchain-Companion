@@ -33,6 +33,9 @@ Do not fake this value. V1 should query a verified Arc-compatible indexer/explor
 ## Daily-care day boundary
 The contract uses UTC day indexes (`block.timestamp / 1 days`) for deterministic streak logic. Frontend copy must make the reset behavior clear.
 
+## Local deployment environment
+Hardhat loads `.env` locally before network configuration. `DEPLOYER_PRIVATE_KEY` and other secrets remain ignored by Git and must never be committed, pasted into source code, or shared in chat. A dedicated Arc Testnet deployer wallet is preferred.
+
 ## Special Arc Quest
 Add only after the companion loop is stable. First candidate: Circle App Kit same-chain USDC→EURC swap on Arc Testnet. Cosmetic reward verification must be verifiable rather than a frontend-only flag.
 
