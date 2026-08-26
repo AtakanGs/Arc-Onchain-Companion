@@ -1,5 +1,6 @@
 import { FAMILIES } from "../lib/companion";
 import { vexaGenesisArt } from "../lib/vexa-art";
+import styles from "./CompanionVisual.module.css";
 
 export function CompanionVisual({
   label,
@@ -18,7 +19,7 @@ export function CompanionVisual({
   const isVexa = family === "Vexa";
 
   return (
-    <div className={`companionCard artCard ${mode} family-${familyIndex} archetype-${archetypeIndex}`} aria-label={`${family} Arc Companion genesis visual`}>
+    <div className={`companionCard ${styles.artCard} ${mode} family-${familyIndex} archetype-${archetypeIndex}`} aria-label={`${family} Arc Companion genesis visual`}>
       <div className="cardGrid" />
       <div className="signalHalo haloOne" />
       <div className="signalHalo haloTwo" />
@@ -26,12 +27,12 @@ export function CompanionVisual({
       <div className="orbit orbitTwo"><i /></div>
       <div className="scanLine" />
 
-      <div className="artStage">
+      <div className={styles.artStage}>
         {isVexa ? (
-          <img className="genesisArtwork" src={vexaGenesisArt} alt="Vexa Genesis, an Arc Companion creature" />
+          <img className={styles.genesisArtwork} src={vexaGenesisArt} alt="Vexa Genesis, an Arc Companion creature" />
         ) : (
-          <div className="speciesPending" role="img" aria-label={`${family} visual identity is still concealed`}>
-            <div className="pendingCore" />
+          <div className={styles.speciesPending} role="img" aria-label={`${family} visual identity is still concealed`}>
+            <div className={styles.pendingCore} />
             <strong>{family.toUpperCase()}</strong>
             <span>GENESIS SIGNAL CONCEALED</span>
           </div>
