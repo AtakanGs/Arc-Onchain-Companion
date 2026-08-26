@@ -35,6 +35,13 @@
   transition: transform .6s ease, filter .6s ease, opacity .6s ease;
 }
 
+.evolvedArtwork {
+  width: 94%;
+  height: 82%;
+  transform: scale(1.08);
+  filter: saturate(1.08) contrast(1.08) drop-shadow(0 26px 48px rgba(147, 83, 255, .34));
+}
+
 :global(.companionCard.dormant) .genesisArtwork {
   transform: scale(.94);
   filter: saturate(.72) brightness(.78) contrast(1.03) drop-shadow(0 18px 36px rgba(83, 39, 163, .18));
@@ -49,6 +56,29 @@
 :global(.companionCard.awake) .genesisArtwork {
   transform: scale(1.015);
   filter: saturate(1.02) contrast(1.06) drop-shadow(0 24px 48px rgba(166, 94, 255, .34));
+}
+
+.reaction-feed .genesisArtwork { animation: reactionFeed .7s ease both; }
+.reaction-care .genesisArtwork { animation: reactionCare .8s ease both; }
+.reaction-play .genesisArtwork { animation: reactionPlay .75s ease both; }
+.reaction-clean .genesisArtwork { animation: reactionClean .75s ease both; }
+.reaction-recharge .genesisArtwork { animation: reactionRecharge .9s ease both; }
+
+.reactionPulse {
+  position: absolute;
+  z-index: 5;
+  bottom: 12%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 7px 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(214,255,87,.28);
+  background: rgba(8,10,15,.72);
+  color: #d6ff57;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .16em;
+  animation: pulseLabel .9s ease both;
 }
 
 .speciesPending {
@@ -90,7 +120,42 @@
   letter-spacing: .14em;
 }
 
+@keyframes reactionFeed {
+  0% { transform: scale(1.015); }
+  35% { transform: translateY(8px) scale(1.045); }
+  70% { transform: translateY(-3px) scale(1.03); }
+  100% { transform: scale(1.015); }
+}
+
+@keyframes reactionCare {
+  0%,100% { transform: scale(1.015); }
+  45% { transform: scale(1.055) rotate(-1deg); filter: saturate(1.12) brightness(1.08) drop-shadow(0 28px 52px rgba(214,255,87,.2)); }
+}
+
+@keyframes reactionPlay {
+  0%,100% { transform: translateY(0) rotate(0) scale(1.015); }
+  35% { transform: translateY(-14px) rotate(-2deg) scale(1.035); }
+  68% { transform: translateY(2px) rotate(1.5deg) scale(1.025); }
+}
+
+@keyframes reactionClean {
+  0%,100% { transform: scale(1.015); filter: saturate(1.02) contrast(1.06); }
+  50% { transform: scale(1.025); filter: saturate(.88) brightness(1.16) contrast(1.03); }
+}
+
+@keyframes reactionRecharge {
+  0%,100% { transform: scale(1.015); }
+  45% { transform: scale(1.04); filter: saturate(1.18) brightness(1.14) drop-shadow(0 30px 60px rgba(166,94,255,.48)); }
+}
+
+@keyframes pulseLabel {
+  from { opacity: 0; transform: translate(-50%, 8px); }
+  30%,70% { opacity: 1; }
+  to { opacity: 0; transform: translate(-50%, -5px); }
+}
+
 @media (max-width: 800px) {
   .artStage { inset: 24px 14px 102px; }
   .genesisArtwork { transform: scale(.94); }
+  .evolvedArtwork { width: 100%; height: 78%; }
 }
