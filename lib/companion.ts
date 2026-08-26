@@ -7,7 +7,7 @@ export const ARCHETYPES = [
   "Challenger",
 ] as const;
 
-export const FAMILIES = ["Lumi", "Vexa", "Nox"] as const;
+export const FAMILIES = ["Vexa", "Noma", "Koru"] as const;
 
 export const DAILY_ACTIONS = [
   { key: "feed", label: "Feed", bit: 1 },
