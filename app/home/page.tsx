@@ -3,15 +3,13 @@
 import { useMemo, useState } from "react";
 import { createWalletClient, custom } from "viem";
 import { arcTestnet } from "viem/chains";
+import { CompanionVisual } from "../../components/CompanionVisual";
 import { arcPublicClient } from "../../lib/arc";
 import { ARCHETYPES, FAMILIES } from "../../lib/companion";
 import { arcCompanionAbi, arcCompanionAddress } from "../../lib/contract";
 import { dailyMoment, utcDayIndex } from "../../lib/daily";
 
-type EthereumProvider = {
-  request(args: { method: string; params?: unknown[] }): Promise<unknown>;
-};
-
+type EthereumProvider = { request(args: { method: string; params?: unknown[] }): Promise<unknown> };
 type CompanionState = {
   bornOnArc: bigint;
   adoptedAt: bigint;
@@ -33,12 +31,7 @@ function shortAddress(address: string) {
 }
 
 function birthDate(timestamp: bigint) {
-  return new Intl.DateTimeFormat("en", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    timeZone: "UTC",
-  }).format(new Date(Number(timestamp) * 1000));
+  return new Intl.DateTimeFormat("en", { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(Number(timestamp) * 1000));
 }
 
 export default function CompanionHome() {
@@ -61,13 +54,7 @@ export default function CompanionHome() {
 
     setStatus("loading");
     try {
-      const id = await arcPublicClient.readContract({
-        address: arcCompanionAddress,
-        abi: arcCompanionAbi,
-        functionName: "companionOf",
-        args: [owner],
-      });
-
+      const id = await arcPublicClient.readContract({ address: arcCompanionAddress, abi: arcCompanionAbi, functionName: "companionOf", args: [owner] });
       if (id === 0n) {
         setStatus("error");
         setMessage("No companion is attached to this wallet yet. Complete the genesis flow first.");
@@ -75,18 +62,8 @@ export default function CompanionHome() {
       }
 
       const [rawCompanion, rawLevel] = await Promise.all([
-        arcPublicClient.readContract({
-          address: arcCompanionAddress,
-          abi: arcCompanionAbi,
-          functionName: "companion",
-          args: [id],
-        }),
-        arcPublicClient.readContract({
-          address: arcCompanionAddress,
-          abi: arcCompanionAbi,
-          functionName: "levelOf",
-          args: [id],
-        }),
+        arcPublicClient.readContract({ address: arcCompanionAddress, abi: arcCompanionAbi, functionName: "companion", args: [id] }),
+        arcPublicClient.readContract({ address: arcCompanionAddress, abi: arcCompanionAbi, functionName: "levelOf", args: [id] }),
       ]);
 
       setTokenId(id);
@@ -139,17 +116,8 @@ export default function CompanionHome() {
 
     try {
       setStatus("care");
-      const walletClient = createWalletClient({
-        account: address,
-        chain: arcTestnet,
-        transport: custom(ethereum),
-      });
-      const hash = await walletClient.writeContract({
-        address: arcCompanionAddress,
-        abi: arcCompanionAbi,
-        functionName: "completeDailyCare",
-        args: [moment.actionMask],
-      });
+      const walletClient = createWalletClient({ account: address, chain: arcTestnet, transport: custom(ethereum) });
+      const hash = await walletClient.writeContract({ address: arcCompanionAddress, abi: arcCompanionAbi, functionName: "completeDailyCare", args: [moment.actionMask] });
       await arcPublicClient.waitForTransactionReceipt({ hash });
       await refresh(address);
       setMessage("Today is saved on Arc ✓");
@@ -183,11 +151,7 @@ export default function CompanionHome() {
       <nav className="nav"><strong>ARC COMPANION</strong><span className="network">{shortAddress(address)} · Arc Testnet</span></nav>
       <section className="homeGrid">
         <div className="homeCreature">
-          <div className="companionCard active homeCard">
-            <div className="orb" />
-            <div className="placeholderBody"><div className="ear left" /><div className="ear right" /><div className="face"><span className="eye" /><span className="eye" /></div></div>
-            <div className="cardMeta"><span>{family.toUpperCase()} · LEVEL {level.toString()}</span><strong>{companion.name}</strong></div>
-          </div>
+          <CompanionVisual label={`${companion.name} · Level ${level.toString()}`} mode="awake" familyIndex={companion.family} archetypeIndex={companion.archetype} />
         </div>
 
         <div className="dailyPanel">
@@ -208,6 +172,7 @@ export default function CompanionHome() {
             <div><span>BORN ON ARC</span><strong>{birthDate(companion.bornOnArc)}</strong></div>
           </div>
 
+          {family === "Vexa" && <p className="micro">Evolution potential: Veyra · Vexus. Your path remains yours to shape.</p>}
           {!completedToday && <button onClick={completeCare} disabled={status === "care"}>{status === "care" ? "Saving on Arc…" : "Complete today’s care"}</button>}
           {message && <p className={status === "error" ? "errorText" : "successText"}>{message}</p>}
           <p className="micro">{archetype} · Token #{tokenId.toString()} · Daily reset uses UTC for deterministic onchain streaks.</p>
