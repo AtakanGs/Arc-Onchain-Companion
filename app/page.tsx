@@ -3,14 +3,12 @@
 import { useMemo, useState } from "react";
 import { createWalletClient, custom, keccak256 } from "viem";
 import { arcTestnet } from "viem/chains";
-import { ARCHETYPES, FAMILIES } from "../lib/companion";
+import { CompanionVisual } from "../components/CompanionVisual";
 import { arcPublicClient } from "../lib/arc";
+import { ARCHETYPES, FAMILIES } from "../lib/companion";
 import { arcCompanionAbi, arcCompanionAddress } from "../lib/contract";
 
-type EthereumProvider = {
-  request(args: { method: string; params?: unknown[] }): Promise<unknown>;
-};
-
+type EthereumProvider = { request(args: { method: string; params?: unknown[] }): Promise<unknown> };
 type Option = { label: string; archetype: number };
 type Question = { title: string; options: Option[] };
 type BirthState = { status: "idle" | "loading" | "found" | "new" | "unavailable"; timestamp?: number };
@@ -92,13 +90,9 @@ export default function Home() {
     try {
       const response = await fetch(`/api/arc-birth?address=${encodeURIComponent(walletAddress)}`);
       const payload = await response.json() as { bornOnArc?: number | null; available?: boolean };
-      if (payload.bornOnArc) {
-        setBirth({ status: "found", timestamp: payload.bornOnArc });
-      } else if (payload.available) {
-        setBirth({ status: "new" });
-      } else {
-        setBirth({ status: "unavailable" });
-      }
+      if (payload.bornOnArc) setBirth({ status: "found", timestamp: payload.bornOnArc });
+      else if (payload.available) setBirth({ status: "new" });
+      else setBirth({ status: "unavailable" });
     } catch {
       setBirth({ status: "unavailable" });
     }
@@ -115,7 +109,6 @@ export default function Home() {
     try {
       const accounts = await ethereum.request({ method: "eth_requestAccounts" }) as string[];
       if (!accounts[0]) throw new Error("No wallet account returned");
-
       try {
         await ethereum.request({ method: "wallet_switchEthereumChain", params: [{ chainId: "0x4cef52" }] });
       } catch {
@@ -130,7 +123,6 @@ export default function Home() {
           }],
         });
       }
-
       setAddress(accounts[0]);
       setStep("quiz");
       void resolveBirth(accounts[0]);
@@ -142,11 +134,8 @@ export default function Home() {
   function answer(archetype: number) {
     const nextAnswers = [...answers, archetype];
     setAnswers(nextAnswers);
-    if (questionIndex === QUESTIONS.length - 1) {
-      setStep("reveal");
-    } else {
-      setQuestionIndex((current) => current + 1);
-    }
+    if (questionIndex === QUESTIONS.length - 1) setStep("reveal");
+    else setQuestionIndex((current) => current + 1);
   }
 
   function restartQuiz() {
@@ -185,11 +174,7 @@ export default function Home() {
 
     try {
       setMint({ status: "pending" });
-      const walletClient = createWalletClient({
-        account: address as `0x${string}`,
-        chain: arcTestnet,
-        transport: custom(ethereum),
-      });
+      const walletClient = createWalletClient({ account: address as `0x${string}`, chain: arcTestnet, transport: custom(ethereum) });
       const bornOnArc = birth.status === "found" ? BigInt(birth.timestamp ?? 0) : 0n;
       const hash = await walletClient.writeContract({
         address: arcCompanionAddress,
@@ -221,7 +206,7 @@ export default function Home() {
             {error && <p className="errorText">{error}</p>}
             <p className="micro">Built on Arc Testnet · Daily state lives onchain</p>
           </div>
-          <CompanionVisual label="Your companion is waiting." mode="dormant" />
+          <CompanionVisual label="A glimpse of what can awaken on Arc." mode="dormant" familyIndex={0} featured />
         </section>
       )}
 
@@ -238,7 +223,7 @@ export default function Home() {
             </div>
             <p className="micro">No answer gives you an advantage. It only shapes your companion&apos;s genesis identity.</p>
           </div>
-          <CompanionVisual label={birth.status === "loading" ? "Finding your Arc beginning…" : "Reading your signal…"} mode="scan" />
+          <CompanionVisual label={birth.status === "loading" ? "Finding your Arc beginning…" : "Reading your signal…"} mode="scan" familyIndex={0} featured />
         </section>
       )}
 
@@ -253,6 +238,11 @@ export default function Home() {
               <div><span>FAMILY</span><strong>{result.family}</strong></div>
               <div><span>BORN ON ARC</span><strong>{birthLabel()}</strong></div>
             </div>
+            {result.family === "Vexa" ? (
+              <div className="evolutionTease"><span>EVOLUTION POTENTIAL</span><strong>Veyra · Vexus</strong><p>Your future choices will decide which path awakens.</p></div>
+            ) : (
+              <div className="evolutionTease"><span>VISUAL IDENTITY</span><strong>{result.family} is still concealed</strong><p>This family&apos;s production artwork will be revealed in a later build.</p></div>
+            )}
             {birth.status === "unavailable" && <p className="micro">We never invent an Arc birth date. If explorer history is unavailable, minting stays locked until it can be resolved.</p>}
             {birth.status === "new" && <p className="micro">No prior Arc transaction was found. The mint block timestamp will become this companion&apos;s onchain birth time.</p>}
 
@@ -283,63 +273,5 @@ export default function Home() {
         <article><strong>03</strong><span>Growth</span><p>Streaks, choices and Arc achievements change the visual identity.</p></article>
       </section>
     </main>
-  );
-}
-
-function CompanionVisual({
-  label,
-  mode = "dormant",
-  familyIndex = 0,
-  archetypeIndex = 0,
-}: {
-  label: string;
-  mode?: "dormant" | "scan" | "awake";
-  familyIndex?: number;
-  archetypeIndex?: number;
-}) {
-  return (
-    <div className={`companionCard ${mode} family-${familyIndex} archetype-${archetypeIndex}`} aria-label="Arc Companion genesis visual">
-      <div className="cardGrid" />
-      <div className="signalHalo haloOne" />
-      <div className="signalHalo haloTwo" />
-      <div className="orbit orbitOne"><i /></div>
-      <div className="orbit orbitTwo"><i /></div>
-      <div className="scanLine" />
-
-      <div className="creatureStage">
-        <div className="groundGlow" />
-        <div className="creatureShell">
-          <div className="antenna antennaLeft"><i /></div>
-          <div className="antenna antennaRight"><i /></div>
-          <div className="crest"><i /><i /><i /></div>
-          <div className="headFin finLeft" />
-          <div className="headFin finRight" />
-
-          <div className="creatureBody">
-            <div className="bodySheen" />
-            <div className="templeNode nodeLeft" />
-            <div className="templeNode nodeRight" />
-            <div className="facePlate">
-              <span className="eye eyeLeft"><i /></span>
-              <span className="eye eyeRight"><i /></span>
-              <span className="mouth" />
-            </div>
-            <div className="chestCore"><i /></div>
-            <div className="bodyMark markOne" />
-            <div className="bodyMark markTwo" />
-            <div className="arm armLeft"><i /></div>
-            <div className="arm armRight"><i /></div>
-            <div className="foot footLeft" />
-            <div className="foot footRight" />
-          </div>
-        </div>
-      </div>
-
-      <div className="statusRail">
-        <span><i /> ARC SIGNAL</span>
-        <span>{mode === "awake" ? "IDENTITY LOCKED" : mode === "scan" ? "SCANNING" : "DORMANT"}</span>
-      </div>
-      <div className="cardMeta"><span>GENESIS FORM</span><strong>{label}</strong></div>
-    </div>
   );
 }
