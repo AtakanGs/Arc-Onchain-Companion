@@ -1,6 +1,5 @@
 import { FAMILIES } from "../lib/companion";
-import { vexaGenesisArt } from "../lib/vexa-art";
-import { veyraPreviewArt, vexusPreviewArt } from "../lib/vexa-evolution-art";
+import { vexaGenesisArt, veyraPreviewArt, vexusPreviewArt } from "../lib/vexa-web";
 import styles from "./CompanionVisual.module.css";
 
 export type CompanionReaction = "idle" | "feed" | "care" | "play" | "clean" | "recharge";
