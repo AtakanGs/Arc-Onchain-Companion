@@ -9,10 +9,11 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
+    "verify:art": "node scripts/verify-vexa-art.cjs",
     "contracts:compile": "hardhat compile",
     "contracts:test": "hardhat test",
     "test": "npm run contracts:test",
-    "ci": "npm run contracts:compile && npm run contracts:test && npm run typecheck && npm run build",
+    "ci": "npm run verify:art && npm run contracts:compile && npm run contracts:test && npm run typecheck && npm run build",
     "preflight:arc": "hardhat run scripts/preflight.cjs --network arcTestnet",
     "deploy:arc": "hardhat run scripts/deploy.cjs --network arcTestnet"
   },
