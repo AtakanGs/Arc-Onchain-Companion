@@ -26,6 +26,9 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Verify Vexa artwork
+        run: npm run verify:art
+
       - name: Compile contracts
         run: npm run contracts:compile
 
