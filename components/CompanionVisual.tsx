@@ -1,6 +1,8 @@
 import { FAMILIES } from "../lib/companion";
-import { vexaGenesisArt, veyraPreviewArt, vexusPreviewArt } from "../lib/vexa-web";
+import { veyraPreviewArt, vexusPreviewArt } from "../lib/vexa-web";
 import styles from "./CompanionVisual.module.css";
+
+const VEXA_GENESIS_ART = "/assets/vexa-genesis.webp";
 
 export type CompanionReaction = "idle" | "feed" | "care" | "play" | "clean" | "recharge";
 
@@ -40,7 +42,7 @@ export function CompanionVisual({
         {isVexa ? (
           <img
             className={`${styles.genesisArtwork} ${evolvedArt ? styles.evolvedArtwork : ""}`}
-            src={evolvedArt ?? vexaGenesisArt}
+            src={evolvedArt ?? VEXA_GENESIS_ART}
             alt={`${formName}, an Arc Companion creature`}
           />
         ) : (
