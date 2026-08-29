@@ -5,7 +5,9 @@
   "description": "A living onchain companion shaped by your Arc history and daily activity.",
   "license": "MIT",
   "scripts": {
+    "predev": "node scripts/verify-vexa-art.cjs",
     "dev": "next dev",
+    "prebuild": "node scripts/verify-vexa-art.cjs",
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
