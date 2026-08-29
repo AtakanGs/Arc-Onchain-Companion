@@ -9,28 +9,36 @@ const outputFile = path.join(outputDir, "vexa-genesis.webp");
 
 const EXPECTED_BYTES = 85070;
 const EXPECTED_SHA256 = "45059ef3589e3b7a5ca2bd452a5480c4e11b39e156b446d5520e84577a9355b0";
-const PART_COUNT = 11;
 
-function extractBase64(source, file) {
+function readWrapped(file) {
+  const source = fs.readFileSync(path.join(sourceRoot, file), "utf8");
   const prefix = 'const chunk = "';
   const start = source.indexOf(prefix);
-  if (start === -1) {
-    throw new Error(`${file}: missing chunk prefix`);
-  }
-
-  const remainder = source.slice(start + prefix.length);
-  const match = remainder.match(/^[A-Za-z0-9+/=]+/);
-  if (!match) {
-    throw new Error(`${file}: no base64 payload found`);
-  }
+  if (start === -1) throw new Error(`${file}: missing chunk prefix`);
+  const match = source.slice(start + prefix.length).match(/^[A-Za-z0-9+/=]+/);
+  if (!match) throw new Error(`${file}: no base64 payload found`);
   return match[0];
 }
 
-const encoded = Array.from({ length: PART_COUNT }, (_, index) => {
-  const file = `part-${String(index).padStart(2, "0")}.txt`;
-  const source = fs.readFileSync(path.join(sourceRoot, file), "utf8");
-  return extractBase64(source, file);
-}).join("");
+function readRaw(file) {
+  const source = fs.readFileSync(path.join(sourceRoot, file), "utf8").trim();
+  if (!source || !/^[A-Za-z0-9+/=]+$/.test(source)) {
+    throw new Error(`${file}: invalid raw base64 payload`);
+  }
+  return source;
+}
+
+const encoded = [
+  readWrapped("part-00.txt"),
+  readRaw("part-01a.b64"),
+  readRaw("part-01b0.b64"),
+  readRaw("part-01b1.b64"),
+  readRaw("part-01b2.b64"),
+  readRaw("part-01b3.b64"),
+  readRaw("part-01c.b64"),
+  readRaw("part-01d.b64"),
+  ...Array.from({ length: 9 }, (_, offset) => readWrapped(`part-${String(offset + 2).padStart(2, "0")}.txt`)),
+].join("");
 
 const buffer = Buffer.from(encoded, "base64");
 const signature = buffer.subarray(0, 4).toString("ascii");
