@@ -6,3 +6,4 @@ cache
 .env.local
 coverage
 .DS_Store
+public/assets/vexa-genesis.webp
