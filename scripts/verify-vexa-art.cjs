@@ -13,7 +13,6 @@ const VEXA_EXPECTED_BYTES = 85070;
 const VEXA_EXPECTED_SHA256 = "45059ef3589e3b7a5ca2bd452a5480c4e11b39e156b446d5520e84577a9355b0";
 const NOMA_EXPECTED_BYTES = 47698;
 const NOMA_EXPECTED_SHA256 = "882995a961876e3f7f1921aa924770c3ea1db68b75b0d141e42db26a7356d6a0";
-const NOMA_CHUNK_LENGTH = 7950;
 
 function readWrapped(root, file) {
   const source = fs.readFileSync(path.join(root, file), "utf8");
@@ -27,9 +26,7 @@ function readWrapped(root, file) {
 
 function readRaw(root, file) {
   const source = fs.readFileSync(path.join(root, file), "utf8").trim();
-  if (!source || !/^[A-Za-z0-9+/=]+$/.test(source)) {
-    throw new Error(`${file}: invalid raw base64 payload`);
-  }
+  if (!source || !/^[A-Za-z0-9+/=]+$/.test(source)) throw new Error(`${file}: invalid raw base64 payload`);
   return source;
 }
 
@@ -38,7 +35,6 @@ function verifyWebp(file, label, expectedBytes, expectedSha256) {
   const signature = buffer.subarray(0, 4).toString("ascii");
   const format = buffer.subarray(8, 12).toString("ascii");
   const hash = crypto.createHash("sha256").update(buffer).digest("hex");
-
   if (signature !== "RIFF" || format !== "WEBP") throw new Error(`${label}: invalid WebP signature (${signature}/${format})`);
   if (buffer.length !== expectedBytes) throw new Error(`${label}: expected ${expectedBytes} bytes, got ${buffer.length}`);
   if (hash !== expectedSha256) throw new Error(`${label}: SHA-256 mismatch. Expected ${expectedSha256}, got ${hash}`);
@@ -55,14 +51,17 @@ const vexaEncoded = [
   ...Array.from({ length: 9 }, (_, offset) => readWrapped(vexaSourceRoot, `part-${String(offset + 2).padStart(2, "0")}.txt`)),
 ].join("");
 
-const nomaChunks = Array.from({ length: 8 }, (_, index) => {
-  const file = `part-${String(index).padStart(2, "0")}.b64`;
+const nomaSourceFiles = [
+  ["part-00a.b64", 2000], ["part-00b.b64", 2000], ["part-00c.b64", 2000], ["part-00d.b64", 1950],
+  ["part-01.b64", 7950], ["part-02.b64", 7950], ["part-03.b64", 7950], ["part-04.b64", 7950],
+  ["part-05.b64", 7950], ["part-06.b64", 7950], ["part-07.b64", 7950],
+];
+const nomaEncoded = nomaSourceFiles.map(([file, expectedLength]) => {
   const chunk = readRaw(nomaSourceRoot, file);
   console.log(`Noma ${file}: ${chunk.length} base64 chars`);
-  if (chunk.length !== NOMA_CHUNK_LENGTH) throw new Error(`${file}: expected ${NOMA_CHUNK_LENGTH} base64 chars, got ${chunk.length}`);
+  if (chunk.length !== expectedLength) throw new Error(`${file}: expected ${expectedLength} base64 chars, got ${chunk.length}`);
   return chunk;
-});
-const nomaEncoded = nomaChunks.join("");
+}).join("");
 
 fs.mkdirSync(outputDir, { recursive: true });
 fs.writeFileSync(vexaOutputFile, Buffer.from(vexaEncoded, "base64"));
