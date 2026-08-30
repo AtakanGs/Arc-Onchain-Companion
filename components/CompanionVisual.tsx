@@ -23,10 +23,20 @@ export function CompanionVisual({
 }) {
   const family = FAMILIES[familyIndex] ?? FAMILIES[0];
   const isVexa = family === "Vexa";
-  const evolvedArt = evolutionPath === 1 ? veyraPreviewArt : evolutionPath === 2 ? vexusPreviewArt : null;
+  const evolvedArt = isVexa
+    ? evolutionPath === 1
+      ? veyraPreviewArt
+      : evolutionPath === 2
+        ? vexusPreviewArt
+        : null
+    : null;
   const artwork = evolvedArt ?? "/assets/vexa-genesis.webp";
-  const formName = evolutionPath === 1 ? "Veyra" : evolutionPath === 2 ? "Vexus" : "Vexa";
-  const formRank = evolutionPath === 0 ? "GENESIS FORM" : "EVOLVED FORM";
+  const formName = isVexa && evolutionPath === 1
+    ? "Veyra"
+    : isVexa && evolutionPath === 2
+      ? "Vexus"
+      : family;
+  const formRank = evolutionPath > 0 && isVexa ? "EVOLVED FORM" : "GENESIS FORM";
 
   return (
     <div className={`companionCard ${styles.artCard} ${mode} family-${familyIndex} archetype-${archetypeIndex} ${styles[`reaction-${reaction}`]}`} aria-label={`${formName} Arc Companion visual`}>
@@ -56,9 +66,9 @@ export function CompanionVisual({
 
       <div className="statusRail">
         <span><i /> ARC SIGNAL</span>
-        <span>{featured ? "FEATURED GENESIS" : evolutionPath ? "EVOLUTION ACTIVE" : mode === "awake" ? "IDENTITY LOCKED" : mode === "scan" ? "SCANNING" : "DORMANT"}</span>
+        <span>{featured ? "FEATURED GENESIS" : evolutionPath && isVexa ? "EVOLUTION ACTIVE" : mode === "awake" ? "IDENTITY LOCKED" : mode === "scan" ? "SCANNING" : "DORMANT"}</span>
       </div>
-      <div className="cardMeta"><span>{featured ? "VEXA · GENESIS FORM" : `${formName.toUpperCase()} · ${formRank}`}</span><strong>{label}</strong></div>
+      <div className="cardMeta"><span>{`${formName.toUpperCase()} · ${formRank}`}</span><strong>{label}</strong></div>
     </div>
   );
 }
