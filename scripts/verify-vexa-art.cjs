@@ -28,6 +28,25 @@ function readRaw(file) {
   return source;
 }
 
+function verifyWebp(file, label, expectedBytes, expectedSha256) {
+  const buffer = fs.readFileSync(file);
+  const signature = buffer.subarray(0, 4).toString("ascii");
+  const format = buffer.subarray(8, 12).toString("ascii");
+  const hash = crypto.createHash("sha256").update(buffer).digest("hex");
+
+  if (signature !== "RIFF" || format !== "WEBP") {
+    throw new Error(`${label}: invalid WebP signature (${signature}/${format})`);
+  }
+  if (buffer.length !== expectedBytes) {
+    throw new Error(`${label}: expected ${expectedBytes} bytes, got ${buffer.length}`);
+  }
+  if (hash !== expectedSha256) {
+    throw new Error(`${label}: SHA-256 mismatch. Expected ${expectedSha256}, got ${hash}`);
+  }
+
+  console.log(`✓ ${label}: ${buffer.length} bytes · ${hash}`);
+}
+
 const encoded = [
   readWrapped("part-00.txt"),
   readRaw("part-01a.b64"),
@@ -47,28 +66,14 @@ const encoded = [
   ...Array.from({ length: 9 }, (_, offset) => readWrapped(`part-${String(offset + 2).padStart(2, "0")}.txt`)),
 ].join("");
 
-const buffer = Buffer.from(encoded, "base64");
-const signature = buffer.subarray(0, 4).toString("ascii");
-const format = buffer.subarray(8, 12).toString("ascii");
-const hash = crypto.createHash("sha256").update(buffer).digest("hex");
-
-if (signature !== "RIFF" || format !== "WEBP") {
-  throw new Error(`Vexa Genesis: invalid WebP signature (${signature}/${format})`);
-}
-if (buffer.length !== EXPECTED_BYTES) {
-  throw new Error(`Vexa Genesis: expected ${EXPECTED_BYTES} bytes, got ${buffer.length}`);
-}
-if (hash !== EXPECTED_SHA256) {
-  throw new Error(`Vexa Genesis: SHA-256 mismatch. Expected ${EXPECTED_SHA256}, got ${hash}`);
-}
-
+const vexaBuffer = Buffer.from(encoded, "base64");
 fs.mkdirSync(outputDir, { recursive: true });
-fs.writeFileSync(outputFile, buffer);
+fs.writeFileSync(outputFile, vexaBuffer);
+verifyWebp(outputFile, "Vexa Genesis static asset", EXPECTED_BYTES, EXPECTED_SHA256);
 
-const written = fs.readFileSync(outputFile);
-const writtenHash = crypto.createHash("sha256").update(written).digest("hex");
-if (written.length !== EXPECTED_BYTES || writtenHash !== EXPECTED_SHA256) {
-  throw new Error("Vexa Genesis: generated static asset failed post-write verification");
-}
-
-console.log(`✓ Vexa Genesis static asset: ${written.length} bytes · ${writtenHash}`);
+verifyWebp(
+  path.join(outputDir, "noma-genesis.webp"),
+  "Noma Genesis production art",
+  47698,
+  "882995a961876e3f7f1921aa924770c3ea1db68b75b0d141e42db26a7356d6a0",
+);
