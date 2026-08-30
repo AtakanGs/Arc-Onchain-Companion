@@ -23,6 +23,8 @@ export function CompanionVisual({
 }) {
   const family = FAMILIES[familyIndex] ?? FAMILIES[0];
   const isVexa = family === "Vexa";
+  const isNoma = family === "Noma";
+  const hasProductionArt = isVexa || isNoma;
   const evolvedArt = isVexa
     ? evolutionPath === 1
       ? veyraPreviewArt
@@ -30,7 +32,7 @@ export function CompanionVisual({
         ? vexusPreviewArt
         : null
     : null;
-  const artwork = evolvedArt ?? "/assets/vexa-genesis.webp";
+  const artwork = isNoma ? "/assets/noma-genesis.webp" : evolvedArt ?? "/assets/vexa-genesis.webp";
   const formName = isVexa && evolutionPath === 1
     ? "Veyra"
     : isVexa && evolutionPath === 2
@@ -48,9 +50,9 @@ export function CompanionVisual({
       <div className="scanLine" />
 
       <div className={styles.artStage}>
-        {isVexa ? (
+        {hasProductionArt ? (
           <img
-            className={`${styles.genesisArtwork} ${evolvedArt ? styles.evolvedArtwork : ""}`}
+            className={`${styles.genesisArtwork} ${isNoma ? styles.nomaArtwork : ""} ${evolvedArt ? styles.evolvedArtwork : ""}`}
             src={artwork}
             alt={`${formName}, an Arc Companion creature`}
           />
