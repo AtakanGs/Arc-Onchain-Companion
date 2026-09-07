@@ -28,6 +28,7 @@ type CompanionState = {
 };
 
 type Status = "idle" | "loading" | "care" | "evolution" | "ready" | "error";
+type EvolutionPathCard = { label: string; name: string; copy: string; target: string; art: string | null };
 
 function shortAddress(address: string) {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
@@ -43,9 +44,29 @@ function evolutionNames(family: string, path: number) {
     if (path === 2) return { evolved: "Korvax", ascended: "Korvex" };
     return { evolved: "Koru", ascended: "Unknown" };
   }
+  if (family === "Noma") {
+    if (path === 1) return { evolved: "Nymora", ascended: "Nymoria" };
+    if (path === 2) return { evolved: "Noryx", ascended: "Noryth" };
+    return { evolved: "Noma", ascended: "Unknown" };
+  }
   if (path === 1) return { evolved: "Veyra", ascended: "Veyrion" };
   if (path === 2) return { evolved: "Vexus", ascended: "Vexaris" };
   return { evolved: "Vexa", ascended: "Unknown" };
+}
+
+function evolutionCards(family: string): [EvolutionPathCard, EvolutionPathCard] {
+  if (family === "Koru") return [
+    { label: "PATH 01 · HARMONY", name: "Koraya", copy: "Graceful, natural and intuitive. Jade energy unfolds into a living guardian form.", target: "Koralith", art: "/assets/koraya.webp" },
+    { label: "PATH 02 · GUARDIAN", name: "Korvax", copy: "Grounded, powerful and protective. The guardian core condenses into a heavier defensive form.", target: "Korvex", art: "/assets/korvax.webp" },
+  ];
+  if (family === "Noma") return [
+    { label: "PATH 01 · SERENE", name: "Nymora", copy: "Fluid, receptive and ceremonial. Memory light stretches into layered fins and a calmer guardian presence.", target: "Nymoria", art: null },
+    { label: "PATH 02 · PSIONIC", name: "Noryx", copy: "Compact, focused and precise. The memory core sharpens into controlled geometry and crystal orbitals.", target: "Noryth", art: null },
+  ];
+  return [
+    { label: "PATH 01 · HARMONY", name: "Veyra", copy: "Graceful, intuitive and fluid. Arc energy becomes part of movement.", target: "Veyrion", art: veyraPreviewArt },
+    { label: "PATH 02 · RIFT", name: "Vexus", copy: "Fierce, instinctive and powerful. Rift energy reshapes its hunting form.", target: "Vexaris", art: vexusPreviewArt },
+  ];
 }
 
 export default function CompanionHome() {
@@ -69,7 +90,6 @@ export default function CompanionHome() {
       setMessage("The Arc Companion contract has not been configured yet.");
       return;
     }
-
     setStatus("loading");
     try {
       const id = await arcPublicClient.readContract({ address: arcCompanionAddress, abi: arcCompanionAbi, functionName: "companionOf", args: [owner] });
@@ -78,25 +98,17 @@ export default function CompanionHome() {
         setMessage("No companion is attached to this wallet yet. Complete the genesis flow first.");
         return;
       }
-
       const [rawCompanion, rawLevel] = await Promise.all([
         arcPublicClient.readContract({ address: arcCompanionAddress, abi: arcCompanionAbi, functionName: "companion", args: [id] }),
         arcPublicClient.readContract({ address: arcCompanionAddress, abi: arcCompanionAbi, functionName: "levelOf", args: [id] }),
       ]);
-
       setTokenId(id);
       setLevel(rawLevel);
       setCompanion({
         ...rawCompanion,
-        xp: Number(rawCompanion.xp),
-        currentStreak: Number(rawCompanion.currentStreak),
-        longestStreak: Number(rawCompanion.longestStreak),
-        lastCareDay: Number(rawCompanion.lastCareDay),
-        archetype: Number(rawCompanion.archetype),
-        family: Number(rawCompanion.family),
-        evolutionPath: Number(rawCompanion.evolutionPath),
-        shields: Number(rawCompanion.shields),
-        milestoneFlags: Number(rawCompanion.milestoneFlags),
+        xp: Number(rawCompanion.xp), currentStreak: Number(rawCompanion.currentStreak), longestStreak: Number(rawCompanion.longestStreak),
+        lastCareDay: Number(rawCompanion.lastCareDay), archetype: Number(rawCompanion.archetype), family: Number(rawCompanion.family),
+        evolutionPath: Number(rawCompanion.evolutionPath), shields: Number(rawCompanion.shields), milestoneFlags: Number(rawCompanion.milestoneFlags),
       });
       setStatus("ready");
       setMessage("");
@@ -108,12 +120,7 @@ export default function CompanionHome() {
 
   async function connect() {
     const ethereum = (window as Window & { ethereum?: EthereumProvider }).ethereum;
-    if (!ethereum) {
-      setStatus("error");
-      setMessage("No injected wallet found.");
-      return;
-    }
-
+    if (!ethereum) { setStatus("error"); setMessage("No injected wallet found."); return; }
     try {
       const accounts = await ethereum.request({ method: "eth_requestAccounts" }) as `0x${string}`[];
       const owner = accounts[0];
@@ -138,19 +145,14 @@ export default function CompanionHome() {
     if (!address || !moment || !arcCompanionAddress || completedToday || !allActionsDone) return;
     const ethereum = (window as Window & { ethereum?: EthereumProvider }).ethereum;
     if (!ethereum) return;
-
     try {
       setStatus("care");
       const walletClient = createWalletClient({ account: address, chain: arcTestnet, transport: custom(ethereum) });
       const hash = await walletClient.writeContract({ address: arcCompanionAddress, abi: arcCompanionAbi, functionName: "completeDailyCare", args: [moment.actionMask] });
       await arcPublicClient.waitForTransactionReceipt({ hash });
-      setSelectedActions([]);
-      setReaction("idle");
-      await refresh(address);
-      setMessage("Today is saved on Arc ✓");
+      setSelectedActions([]); setReaction("idle"); await refresh(address); setMessage("Today is saved on Arc ✓");
     } catch (cause) {
-      setStatus("error");
-      setMessage(cause instanceof Error ? cause.message : "Daily care transaction failed.");
+      setStatus("error"); setMessage(cause instanceof Error ? cause.message : "Daily care transaction failed.");
     }
   }
 
@@ -158,20 +160,16 @@ export default function CompanionHome() {
     if (!address || !arcCompanionAddress || !companion || companion.xp < 1000 || companion.evolutionPath !== 0) return;
     const ethereum = (window as Window & { ethereum?: EthereumProvider }).ethereum;
     if (!ethereum) return;
-
     try {
       setStatus("evolution");
       const walletClient = createWalletClient({ account: address, chain: arcTestnet, transport: custom(ethereum) });
       const hash = await walletClient.writeContract({ address: arcCompanionAddress, abi: arcCompanionAbi, functionName: "chooseEvolution", args: [path] });
       await arcPublicClient.waitForTransactionReceipt({ hash });
-      setPendingEvolution(0);
-      await refresh(address);
+      setPendingEvolution(0); await refresh(address);
       const currentFamily = FAMILIES[companion.family] ?? "Vexa";
-      const chosen = evolutionNames(currentFamily, path).evolved;
-      setMessage(`${chosen} path awakened on Arc ✓`);
+      setMessage(`${evolutionNames(currentFamily, path).evolved} path awakened on Arc ✓`);
     } catch (cause) {
-      setStatus("error");
-      setMessage(cause instanceof Error ? cause.message : "Evolution transaction failed.");
+      setStatus("error"); setMessage(cause instanceof Error ? cause.message : "Evolution transaction failed.");
     }
   }
 
@@ -191,141 +189,81 @@ export default function CompanionHome() {
     );
   }
 
-  const family = FAMILIES[companion.family] ?? "Unknown";
+  const family = FAMILIES[companion.family] ?? FAMILIES[0];
   const archetype = ARCHETYPES[companion.archetype] ?? "Unknown";
-  const isVexa = family === "Vexa";
-  const isKoru = family === "Koru";
-  const supportsEvolution = isVexa || isKoru;
   const evolutionUnlocked = companion.xp >= 1000;
   const ascendedReached = (companion.milestoneFlags & 4) !== 0;
   const names = evolutionNames(family, companion.evolutionPath);
   const evolvedName = names.evolved;
   const ascendedName = names.ascended;
   const xpProgress = Math.min(companion.xp, 1000);
-
-  const pathOne = isKoru
-    ? {
-        label: "PATH 01 · HARMONY",
-        name: "Koraya",
-        copy: "Graceful, natural and intuitive. Jade energy unfolds into a living guardian form.",
-        target: "Koralith",
-        art: "/assets/koraya.webp",
-      }
-    : {
-        label: "PATH 01 · HARMONY",
-        name: "Veyra",
-        copy: "Graceful, intuitive and fluid. Arc energy becomes part of movement.",
-        target: "Veyrion",
-        art: veyraPreviewArt,
-      };
-
-  const pathTwo = isKoru
-    ? {
-        label: "PATH 02 · GUARDIAN",
-        name: "Korvax",
-        copy: "Grounded, powerful and protective. The guardian core condenses into a heavier defensive form.",
-        target: "Korvex",
-        art: "/assets/korvax.webp",
-      }
-    : {
-        label: "PATH 02 · RIFT",
-        name: "Vexus",
-        copy: "Fierce, instinctive and powerful. Rift energy reshapes its hunting form.",
-        target: "Vexaris",
-        art: vexusPreviewArt,
-      };
+  const [pathOne, pathTwo] = evolutionCards(family);
 
   return (
     <main className="shell">
       <nav className="nav"><strong>ARC COMPANION</strong><span className="network">{shortAddress(address)} · Arc Testnet</span></nav>
       <section className="homeGrid">
         <div className="homeCreature">
-          <CompanionVisual
-            label={`${companion.name} · Level ${level.toString()}`}
-            mode="awake"
-            familyIndex={companion.family}
-            archetypeIndex={companion.archetype}
-            evolutionPath={supportsEvolution ? companion.evolutionPath : 0}
-            ascended={isKoru && ascendedReached}
-            reaction={supportsEvolution ? reaction : "idle"}
-          />
+          <CompanionVisual label={`${companion.name} · Level ${level.toString()}`} mode="awake" familyIndex={companion.family} archetypeIndex={companion.archetype} evolutionPath={companion.evolutionPath} ascended={ascendedReached} reaction={reaction} />
         </div>
 
         <div className="dailyPanel">
           <div className="quizTopline"><span>DAILY MOMENT</span><span>{completedToday ? "COMPLETE" : allActionsDone ? "READY TO SAVE" : "READY"}</span></div>
           <h2>{completedToday ? `${companion.name} is settled for today.` : moment?.title}</h2>
           <p className="lede">{completedToday ? "Come back after the next UTC reset. Your streak and progress are already stored on Arc." : moment?.note}</p>
-
           {!completedToday && moment && (
             <div className="dailyActions">
               {moment.actions.map((action) => {
                 const done = selectedActions.includes(action.key);
-                return (
-                  <button className={`dailyAction ${done ? "done" : ""}`} key={action.key} onClick={() => performAction(action.key)} disabled={done || status === "care"}>
-                    <span>{action.label}</span><small>{done ? "DONE" : "DO NOW"}</small>
-                  </button>
-                );
+                return <button className={`dailyAction ${done ? "done" : ""}`} key={action.key} onClick={() => performAction(action.key)} disabled={done || status === "care"}><span>{action.label}</span><small>{done ? "DONE" : "DO NOW"}</small></button>;
               })}
             </div>
           )}
-
           <div className="statsGrid">
-            <div><span>STREAK</span><strong>🔥 {companion.currentStreak}</strong></div>
-            <div><span>XP</span><strong>{companion.xp}</strong></div>
-            <div><span>SHIELDS</span><strong>{companion.shields} / 2</strong></div>
-            <div><span>BORN ON ARC</span><strong>{birthDate(companion.bornOnArc)}</strong></div>
+            <div><span>STREAK</span><strong>🔥 {companion.currentStreak}</strong></div><div><span>XP</span><strong>{companion.xp}</strong></div><div><span>SHIELDS</span><strong>{companion.shields} / 2</strong></div><div><span>BORN ON ARC</span><strong>{birthDate(companion.bornOnArc)}</strong></div>
           </div>
-
-          {!completedToday && (
-            <button onClick={completeCare} disabled={status === "care" || !allActionsDone}>
-              {status === "care" ? "Saving on Arc…" : allActionsDone ? "Save today on Arc" : "Complete the actions above"}
-            </button>
-          )}
+          {!completedToday && <button onClick={completeCare} disabled={status === "care" || !allActionsDone}>{status === "care" ? "Saving on Arc…" : allActionsDone ? "Save today on Arc" : "Complete the actions above"}</button>}
           {message && <p className={status === "error" ? "errorText" : "successText"}>{message}</p>}
           <p className="micro">{archetype} · Token #{tokenId.toString()} · Daily reset uses UTC for deterministic onchain streaks.</p>
         </div>
       </section>
 
-      {supportsEvolution && (
-        <section className="evolutionPanel">
-          <div className="evolutionHeader">
-            <div><p className="eyebrow">{family.toUpperCase()} EVOLUTION</p><h2>{companion.evolutionPath === 0 ? "One origin. Two permanent paths." : `${evolvedName} has awakened.`}</h2></div>
-            {companion.evolutionPath === 0 && <span className={`evolutionLock ${evolutionUnlocked ? "unlocked" : ""}`}>{evolutionUnlocked ? "UNLOCKED" : `${xpProgress} / 1000 XP`}</span>}
-          </div>
+      <section className="evolutionPanel">
+        <div className="evolutionHeader">
+          <div><p className="eyebrow">{family.toUpperCase()} EVOLUTION</p><h2>{companion.evolutionPath === 0 ? "One origin. Two permanent paths." : `${ascendedReached ? ascendedName : evolvedName} has awakened.`}</h2></div>
+          {companion.evolutionPath === 0 && <span className={`evolutionLock ${evolutionUnlocked ? "unlocked" : ""}`}>{evolutionUnlocked ? "UNLOCKED" : `${xpProgress} / 1000 XP`}</span>}
+        </div>
 
-          {companion.evolutionPath === 0 ? (
-            <>
-              <p className="lede">Reach 1,000 XP to make a permanent onchain choice. Preview both paths now; the Ascended form is earned at the 100-day milestone.</p>
-              <div className="evolutionProgress"><i style={{ width: `${(xpProgress / 1000) * 100}%` }} /></div>
-              <div className="pathGrid">
-                <article className={`pathCard ${pendingEvolution === 1 ? "selected" : ""}`}>
-                  <img src={pathOne.art} alt={`${pathOne.name} evolution preview`} />
-                  <span>{pathOne.label}</span><h3>{pathOne.name}</h3><p>{pathOne.copy}</p>
-                  <strong>Ascended target: {pathOne.target}</strong>
-                  <button onClick={() => setPendingEvolution(1)} disabled={!evolutionUnlocked || status === "evolution"}>{evolutionUnlocked ? `Preview ${pathOne.name} path` : "Locked until 1,000 XP"}</button>
-                </article>
-                <article className={`pathCard ${pendingEvolution === 2 ? "selected" : ""}`}>
-                  <img src={pathTwo.art} alt={`${pathTwo.name} evolution preview`} />
-                  <span>{pathTwo.label}</span><h3>{pathTwo.name}</h3><p>{pathTwo.copy}</p>
-                  <strong>Ascended target: {pathTwo.target}</strong>
-                  <button onClick={() => setPendingEvolution(2)} disabled={!evolutionUnlocked || status === "evolution"}>{evolutionUnlocked ? `Preview ${pathTwo.name} path` : "Locked until 1,000 XP"}</button>
-                </article>
-              </div>
-              {pendingEvolution !== 0 && (
-                <div className="evolutionConfirm">
-                  <div><span>PERMANENT ONCHAIN CHOICE</span><strong>Awaken {pendingEvolution === 1 ? pathOne.name : pathTwo.name}?</strong><p>This path cannot be changed after the transaction is confirmed.</p></div>
-                  <div className="confirmActions"><button className="secondaryButton" onClick={() => setPendingEvolution(0)} disabled={status === "evolution"}>Cancel</button><button onClick={() => chooseEvolution(pendingEvolution as 1 | 2)} disabled={status === "evolution"}>{status === "evolution" ? "Awakening on Arc…" : `Choose ${pendingEvolution === 1 ? pathOne.name : pathTwo.name}`}</button></div>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="chosenEvolution">
-              <div><span>CURRENT FORM</span><strong>{ascendedReached && isKoru ? ascendedName : evolvedName}</strong><p>Your permanent evolution path is stored on Arc.</p></div>
-              <div><span>ASCENDED DESTINY</span><strong>{ascendedName}</strong><p>{isKoru ? (ascendedReached ? "The 100-day milestone is complete. Your Ascended form is active." : "Reach the 100-day milestone to unlock the Ascended form.") : (ascendedReached ? "The 100-day milestone is complete. Ascended presentation is ready for a future visual release." : "Reach the 100-day milestone to unlock the Ascended chapter. Its full form remains concealed until then.")}</p></div>
+        {companion.evolutionPath === 0 ? (
+          <>
+            <p className="lede">Reach 1,000 XP to make a permanent onchain choice. Preview both paths now; the Ascended form is earned at the 100-day milestone.</p>
+            <div className="evolutionProgress"><i style={{ width: `${(xpProgress / 1000) * 100}%` }} /></div>
+            <div className="pathGrid">
+              {[pathOne, pathTwo].map((path, index) => {
+                const pathNumber = (index + 1) as 1 | 2;
+                return (
+                  <article className={`pathCard ${pendingEvolution === pathNumber ? "selected" : ""}`} key={path.name}>
+                    {path.art ? <img src={path.art} alt={`${path.name} evolution preview`} /> : <div className="pathArtPending"><span>VISUAL SIGNAL CONCEALED</span><strong>{path.name}</strong></div>}
+                    <span>{path.label}</span><h3>{path.name}</h3><p>{path.copy}</p><strong>Ascended target: {path.target}</strong>
+                    <button onClick={() => setPendingEvolution(pathNumber)} disabled={!evolutionUnlocked || status === "evolution"}>{evolutionUnlocked ? `Preview ${path.name} path` : "Locked until 1,000 XP"}</button>
+                  </article>
+                );
+              })}
             </div>
-          )}
-        </section>
-      )}
+            {pendingEvolution !== 0 && (
+              <div className="evolutionConfirm">
+                <div><span>PERMANENT ONCHAIN CHOICE</span><strong>Awaken {pendingEvolution === 1 ? pathOne.name : pathTwo.name}?</strong><p>This path cannot be changed after the transaction is confirmed.</p></div>
+                <div className="confirmActions"><button className="secondaryButton" onClick={() => setPendingEvolution(0)} disabled={status === "evolution"}>Cancel</button><button onClick={() => chooseEvolution(pendingEvolution as 1 | 2)} disabled={status === "evolution"}>{status === "evolution" ? "Awakening on Arc…" : `Choose ${pendingEvolution === 1 ? pathOne.name : pathTwo.name}`}</button></div>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="chosenEvolution">
+            <div><span>CURRENT FORM</span><strong>{ascendedReached ? ascendedName : evolvedName}</strong><p>Your permanent evolution path is stored on Arc.</p></div>
+            <div><span>ASCENDED DESTINY</span><strong>{ascendedName}</strong><p>{ascendedReached ? "The 100-day milestone is complete. Your Ascended chapter is active; locked production art is revealed only when its asset is available." : "Reach the 100-day milestone to unlock the Ascended chapter."}</p></div>
+          </div>
+        )}
+      </section>
     </main>
   );
 }
