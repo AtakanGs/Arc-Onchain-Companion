@@ -15,9 +15,26 @@ Arc Companion is a consumer dApp for Arc Testnet. Each wallet discovers a unique
 - One soulbound ERC-721 companion per wallet.
 - Deterministic daily moments with 2–3 care actions settled as one onchain transaction.
 - XP, streaks, Streak Shields, 7/30/100-day milestones.
-- One permanent branching evolution.
+- One permanent branching evolution for every family.
+- Public companion share route at `/share/<tokenId>`.
 - Dynamic metadata base URI foundation.
-- Next: final visual asset system, avatar/share card, then one Circle App Kit Swap quest.
+
+## Evolution trees
+### Vexa
+- Vexa → Veyra → Veyrion
+- Vexa → Vexus → Vexaris
+
+### Noma
+- Noma → Nymora → Nymoria
+- Noma → Noryx → Noryth
+
+### Koru
+- Koru → Koraya → Koralith
+- Koru → Korvax → Korvex
+
+The evolved/Ascended Noma artwork and Veyrion/Vexaris artwork remain intentionally concealed until the previously locked production source assets are safely added. They should not be regenerated just to fill a slot.
+
+Korvex currently uses the locked Korvax production visual by design to avoid visual drift.
 
 ## Arc Testnet
 - Chain ID: `5042002`
@@ -41,7 +58,14 @@ npm run dev
 ```
 
 ## Quality gate
-GitHub Actions runs contract compilation, contract tests, TypeScript checking and a production frontend build on pushes to `main` and pull requests. The local deploy environment explicitly depends on `dotenv`; it is not relying on a transitive package.
+GitHub Actions runs artwork verification, contract compilation, contract tests, TypeScript checking and a production frontend build on pushes to `main` and pull requests.
+
+Use `docs/FINAL_QA.md` as the final release checklist before calling Builder V1 complete.
+
+## Circle / Arc App Kit quest
+The next transactional quest is a real Arc Testnet swap using Circle/Arc App Kit. Do not ship a simulated swap. The quest should be enabled only after the selected App Kit wallet adapter, credentials, quote/slippage handling and transaction verification are configured and tested.
+
+Official Arc App Kit documentation currently shows `@circle-fin/app-kit` with wallet adapters such as `@circle-fin/adapter-viem-v2` and Circle Wallets adapters for Arc Testnet workflows.
 
 ## Deploy
 Use a dedicated Arc Testnet deployer wallet when possible. Never commit or share its private key. Put `DEPLOYER_PRIVATE_KEY` only in the ignored local `.env` file and fund the address with Arc Testnet USDC from the Circle Faucet.
@@ -64,6 +88,7 @@ For alternate deployments, set `NEXT_PUBLIC_ARC_COMPANION_ADDRESS` in the fronte
 - `docs/PRODUCT_SPEC.md`
 - `docs/ARCHITECTURE.md`
 - `docs/DEPLOYMENT.md`
+- `docs/FINAL_QA.md`
 
 ## Scope discipline
 V1 intentionally excludes farming, restaurant gameplay, marketplace, breeding, PvP, lending/borrowing, staking and custom-token deployment. The goal is a polished, finished consumer experience rather than a large feature list.
