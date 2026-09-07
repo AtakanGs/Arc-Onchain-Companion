@@ -37,6 +37,17 @@ function birthDate(timestamp: bigint) {
   return new Intl.DateTimeFormat("en", { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(Number(timestamp) * 1000));
 }
 
+function evolutionNames(family: string, path: number) {
+  if (family === "Koru") {
+    if (path === 1) return { evolved: "Koraya", ascended: "Koralith" };
+    if (path === 2) return { evolved: "Korvax", ascended: "Korvex" };
+    return { evolved: "Koru", ascended: "Unknown" };
+  }
+  if (path === 1) return { evolved: "Veyra", ascended: "Veyrion" };
+  if (path === 2) return { evolved: "Vexus", ascended: "Vexaris" };
+  return { evolved: "Vexa", ascended: "Unknown" };
+}
+
 export default function CompanionHome() {
   const [address, setAddress] = useState<`0x${string}` | "">("");
   const [tokenId, setTokenId] = useState<bigint>(0n);
@@ -155,7 +166,9 @@ export default function CompanionHome() {
       await arcPublicClient.waitForTransactionReceipt({ hash });
       setPendingEvolution(0);
       await refresh(address);
-      setMessage(path === 1 ? "Veyra path awakened on Arc ✓" : "Vexus path awakened on Arc ✓");
+      const currentFamily = FAMILIES[companion.family] ?? "Vexa";
+      const chosen = evolutionNames(currentFamily, path).evolved;
+      setMessage(`${chosen} path awakened on Arc ✓`);
     } catch (cause) {
       setStatus("error");
       setMessage(cause instanceof Error ? cause.message : "Evolution transaction failed.");
@@ -181,11 +194,46 @@ export default function CompanionHome() {
   const family = FAMILIES[companion.family] ?? "Unknown";
   const archetype = ARCHETYPES[companion.archetype] ?? "Unknown";
   const isVexa = family === "Vexa";
+  const isKoru = family === "Koru";
+  const supportsEvolution = isVexa || isKoru;
   const evolutionUnlocked = companion.xp >= 1000;
   const ascendedReached = (companion.milestoneFlags & 4) !== 0;
-  const evolvedName = companion.evolutionPath === 1 ? "Veyra" : companion.evolutionPath === 2 ? "Vexus" : "Vexa";
-  const ascendedName = companion.evolutionPath === 1 ? "Veyrion" : companion.evolutionPath === 2 ? "Vexaris" : "Unknown";
+  const names = evolutionNames(family, companion.evolutionPath);
+  const evolvedName = names.evolved;
+  const ascendedName = names.ascended;
   const xpProgress = Math.min(companion.xp, 1000);
+
+  const pathOne = isKoru
+    ? {
+        label: "PATH 01 · HARMONY",
+        name: "Koraya",
+        copy: "Graceful, natural and intuitive. Jade energy unfolds into a living guardian form.",
+        target: "Koralith",
+        art: "/assets/koraya.webp",
+      }
+    : {
+        label: "PATH 01 · HARMONY",
+        name: "Veyra",
+        copy: "Graceful, intuitive and fluid. Arc energy becomes part of movement.",
+        target: "Veyrion",
+        art: veyraPreviewArt,
+      };
+
+  const pathTwo = isKoru
+    ? {
+        label: "PATH 02 · GUARDIAN",
+        name: "Korvax",
+        copy: "Grounded, powerful and protective. The guardian core condenses into a heavier defensive form.",
+        target: "Korvex",
+        art: "/assets/korvax.webp",
+      }
+    : {
+        label: "PATH 02 · RIFT",
+        name: "Vexus",
+        copy: "Fierce, instinctive and powerful. Rift energy reshapes its hunting form.",
+        target: "Vexaris",
+        art: vexusPreviewArt,
+      };
 
   return (
     <main className="shell">
@@ -197,8 +245,9 @@ export default function CompanionHome() {
             mode="awake"
             familyIndex={companion.family}
             archetypeIndex={companion.archetype}
-            evolutionPath={isVexa ? companion.evolutionPath : 0}
-            reaction={isVexa ? reaction : "idle"}
+            evolutionPath={supportsEvolution ? companion.evolutionPath : 0}
+            ascended={isKoru && ascendedReached}
+            reaction={supportsEvolution ? reaction : "idle"}
           />
         </div>
 
@@ -237,42 +286,42 @@ export default function CompanionHome() {
         </div>
       </section>
 
-      {isVexa && (
+      {supportsEvolution && (
         <section className="evolutionPanel">
           <div className="evolutionHeader">
-            <div><p className="eyebrow">VEXA EVOLUTION</p><h2>{companion.evolutionPath === 0 ? "One origin. Two permanent paths." : `${evolvedName} has awakened.`}</h2></div>
+            <div><p className="eyebrow">{family.toUpperCase()} EVOLUTION</p><h2>{companion.evolutionPath === 0 ? "One origin. Two permanent paths." : `${evolvedName} has awakened.`}</h2></div>
             {companion.evolutionPath === 0 && <span className={`evolutionLock ${evolutionUnlocked ? "unlocked" : ""}`}>{evolutionUnlocked ? "UNLOCKED" : `${xpProgress} / 1000 XP`}</span>}
           </div>
 
           {companion.evolutionPath === 0 ? (
             <>
-              <p className="lede">Reach 1,000 XP to make a permanent onchain choice. Preview both paths now; the full Ascended form stays hidden until your journey earns it.</p>
+              <p className="lede">Reach 1,000 XP to make a permanent onchain choice. Preview both paths now; the Ascended form is earned at the 100-day milestone.</p>
               <div className="evolutionProgress"><i style={{ width: `${(xpProgress / 1000) * 100}%` }} /></div>
               <div className="pathGrid">
                 <article className={`pathCard ${pendingEvolution === 1 ? "selected" : ""}`}>
-                  <img src={veyraPreviewArt} alt="Veyra evolution preview" />
-                  <span>PATH 01 · HARMONY</span><h3>Veyra</h3><p>Graceful, intuitive and fluid. Arc energy becomes part of movement.</p>
-                  <strong>Ascended target: Veyrion</strong>
-                  <button onClick={() => setPendingEvolution(1)} disabled={!evolutionUnlocked || status === "evolution"}>{evolutionUnlocked ? "Preview Veyra path" : "Locked until 1,000 XP"}</button>
+                  <img src={pathOne.art} alt={`${pathOne.name} evolution preview`} />
+                  <span>{pathOne.label}</span><h3>{pathOne.name}</h3><p>{pathOne.copy}</p>
+                  <strong>Ascended target: {pathOne.target}</strong>
+                  <button onClick={() => setPendingEvolution(1)} disabled={!evolutionUnlocked || status === "evolution"}>{evolutionUnlocked ? `Preview ${pathOne.name} path` : "Locked until 1,000 XP"}</button>
                 </article>
                 <article className={`pathCard ${pendingEvolution === 2 ? "selected" : ""}`}>
-                  <img src={vexusPreviewArt} alt="Vexus evolution preview" />
-                  <span>PATH 02 · RIFT</span><h3>Vexus</h3><p>Fierce, instinctive and powerful. Rift energy reshapes its hunting form.</p>
-                  <strong>Ascended target: Vexaris</strong>
-                  <button onClick={() => setPendingEvolution(2)} disabled={!evolutionUnlocked || status === "evolution"}>{evolutionUnlocked ? "Preview Vexus path" : "Locked until 1,000 XP"}</button>
+                  <img src={pathTwo.art} alt={`${pathTwo.name} evolution preview`} />
+                  <span>{pathTwo.label}</span><h3>{pathTwo.name}</h3><p>{pathTwo.copy}</p>
+                  <strong>Ascended target: {pathTwo.target}</strong>
+                  <button onClick={() => setPendingEvolution(2)} disabled={!evolutionUnlocked || status === "evolution"}>{evolutionUnlocked ? `Preview ${pathTwo.name} path` : "Locked until 1,000 XP"}</button>
                 </article>
               </div>
               {pendingEvolution !== 0 && (
                 <div className="evolutionConfirm">
-                  <div><span>PERMANENT ONCHAIN CHOICE</span><strong>Awaken {pendingEvolution === 1 ? "Veyra" : "Vexus"}?</strong><p>This path cannot be changed after the transaction is confirmed.</p></div>
-                  <div className="confirmActions"><button className="secondaryButton" onClick={() => setPendingEvolution(0)} disabled={status === "evolution"}>Cancel</button><button onClick={() => chooseEvolution(pendingEvolution as 1 | 2)} disabled={status === "evolution"}>{status === "evolution" ? "Awakening on Arc…" : `Choose ${pendingEvolution === 1 ? "Veyra" : "Vexus"}`}</button></div>
+                  <div><span>PERMANENT ONCHAIN CHOICE</span><strong>Awaken {pendingEvolution === 1 ? pathOne.name : pathTwo.name}?</strong><p>This path cannot be changed after the transaction is confirmed.</p></div>
+                  <div className="confirmActions"><button className="secondaryButton" onClick={() => setPendingEvolution(0)} disabled={status === "evolution"}>Cancel</button><button onClick={() => chooseEvolution(pendingEvolution as 1 | 2)} disabled={status === "evolution"}>{status === "evolution" ? "Awakening on Arc…" : `Choose ${pendingEvolution === 1 ? pathOne.name : pathTwo.name}`}</button></div>
                 </div>
               )}
             </>
           ) : (
             <div className="chosenEvolution">
-              <div><span>CURRENT FORM</span><strong>{evolvedName}</strong><p>Your permanent evolution path is stored on Arc.</p></div>
-              <div><span>ASCENDED DESTINY</span><strong>{ascendedName}</strong><p>{ascendedReached ? "The 100-day milestone is complete. Ascended presentation is ready for a future visual release." : "Reach the 100-day milestone to unlock the Ascended chapter. Its full form remains concealed until then."}</p></div>
+              <div><span>CURRENT FORM</span><strong>{ascendedReached && isKoru ? ascendedName : evolvedName}</strong><p>Your permanent evolution path is stored on Arc.</p></div>
+              <div><span>ASCENDED DESTINY</span><strong>{ascendedName}</strong><p>{isKoru ? (ascendedReached ? "The 100-day milestone is complete. Your Ascended form is active." : "Reach the 100-day milestone to unlock the Ascended form.") : (ascendedReached ? "The 100-day milestone is complete. Ascended presentation is ready for a future visual release." : "Reach the 100-day milestone to unlock the Ascended chapter. Its full form remains concealed until then.")}</p></div>
             </div>
           )}
         </section>

@@ -11,6 +11,7 @@ export function CompanionVisual({
   archetypeIndex = 0,
   featured = false,
   evolutionPath = 0,
+  ascended = false,
   reaction = "idle",
 }: {
   label: string;
@@ -19,26 +20,70 @@ export function CompanionVisual({
   archetypeIndex?: number;
   featured?: boolean;
   evolutionPath?: number;
+  ascended?: boolean;
   reaction?: CompanionReaction;
 }) {
   const family = FAMILIES[familyIndex] ?? FAMILIES[0];
   const isVexa = family === "Vexa";
   const isNoma = family === "Noma";
-  const hasProductionArt = isVexa || isNoma;
-  const evolvedArt = isVexa
+  const isKoru = family === "Koru";
+
+  const vexaEvolvedArt = isVexa
     ? evolutionPath === 1
       ? veyraPreviewArt
       : evolutionPath === 2
         ? vexusPreviewArt
         : null
     : null;
-  const artwork = isNoma ? "/assets/noma-genesis.webp" : evolvedArt ?? "/assets/vexa-genesis.webp";
-  const formName = isVexa && evolutionPath === 1
-    ? "Veyra"
-    : isVexa && evolutionPath === 2
-      ? "Vexus"
-      : family;
-  const formRank = evolutionPath > 0 && isVexa ? "EVOLVED FORM" : "GENESIS FORM";
+
+  const koruArtwork = evolutionPath === 1
+    ? ascended
+      ? "/assets/koralith.webp"
+      : "/assets/koraya.webp"
+    : evolutionPath === 2
+      ? ascended
+        ? "/assets/korvex.webp"
+        : "/assets/korvax.webp"
+      : "/assets/koru-genesis.webp";
+
+  const artwork = isNoma
+    ? "/assets/noma-genesis.webp"
+    : isKoru
+      ? koruArtwork
+      : vexaEvolvedArt ?? "/assets/vexa-genesis.webp";
+
+  const formName = isKoru
+    ? evolutionPath === 1
+      ? ascended ? "Koralith" : "Koraya"
+      : evolutionPath === 2
+        ? ascended ? "Korvex" : "Korvax"
+        : "Koru"
+    : isVexa && evolutionPath === 1
+      ? "Veyra"
+      : isVexa && evolutionPath === 2
+        ? "Vexus"
+        : family;
+
+  const evolved = evolutionPath > 0 && (isVexa || isKoru);
+  const formRank = ascended && isKoru && evolutionPath > 0
+    ? "ASCENDED FORM"
+    : evolved
+      ? "EVOLVED FORM"
+      : "GENESIS FORM";
+
+  const statusLabel = featured
+    ? "FEATURED GENESIS"
+    : ascended && isKoru && evolutionPath > 0
+      ? "ASCENDED ACTIVE"
+      : evolved
+        ? "EVOLUTION ACTIVE"
+        : mode === "awake"
+          ? "IDENTITY LOCKED"
+          : mode === "scan"
+            ? "SCANNING"
+            : "DORMANT";
+
+  const reactionLabel = reaction === "idle" ? null : String(reaction).toUpperCase();
 
   return (
     <div className={`companionCard ${styles.artCard} ${mode} family-${familyIndex} archetype-${archetypeIndex} ${styles[`reaction-${reaction}`]}`} aria-label={`${formName} Arc Companion visual`}>
@@ -50,25 +95,17 @@ export function CompanionVisual({
       <div className="scanLine" />
 
       <div className={styles.artStage}>
-        {hasProductionArt ? (
-          <img
-            className={`${styles.genesisArtwork} ${isNoma ? styles.nomaArtwork : ""} ${evolvedArt ? styles.evolvedArtwork : ""}`}
-            src={artwork}
-            alt={`${formName}, an Arc Companion creature`}
-          />
-        ) : (
-          <div className={styles.speciesPending} role="img" aria-label={`${family} visual identity is still concealed`}>
-            <div className={styles.pendingCore} />
-            <strong>{family.toUpperCase()}</strong>
-            <span>GENESIS SIGNAL CONCEALED</span>
-          </div>
-        )}
-        {reaction !== "idle" && <span className={styles.reactionPulse}>{reaction.toUpperCase()}</span>}
+        <img
+          className={`${styles.genesisArtwork} ${isNoma ? styles.nomaArtwork : ""} ${evolved ? styles.evolvedArtwork : ""}`}
+          src={artwork}
+          alt={`${formName}, an Arc Companion creature`}
+        />
+        {reactionLabel && <span className={styles.reactionPulse}>{reactionLabel}</span>}
       </div>
 
       <div className="statusRail">
         <span><i /> ARC SIGNAL</span>
-        <span>{featured ? "FEATURED GENESIS" : evolutionPath && isVexa ? "EVOLUTION ACTIVE" : mode === "awake" ? "IDENTITY LOCKED" : mode === "scan" ? "SCANNING" : "DORMANT"}</span>
+        <span>{statusLabel}</span>
       </div>
       <div className="cardMeta"><span>{`${formName.toUpperCase()} · ${formRank}`}</span><strong>{label}</strong></div>
     </div>
