@@ -4,6 +4,24 @@ import styles from "./CompanionVisual.module.css";
 
 export type CompanionReaction = "idle" | "feed" | "care" | "play" | "clean" | "recharge";
 
+function resolveForm(family: (typeof FAMILIES)[number], evolutionPath: number, ascended: boolean) {
+  if (family === "Koru") {
+    if (evolutionPath === 1) return { name: ascended ? "Koralith" : "Koraya", art: ascended ? "/assets/koralith.webp" : "/assets/koraya.webp" };
+    if (evolutionPath === 2) return { name: ascended ? "Korvex" : "Korvax", art: ascended ? "/assets/korvex.webp" : "/assets/korvax.webp" };
+    return { name: "Koru", art: "/assets/koru-genesis.webp" };
+  }
+
+  if (family === "Noma") {
+    if (evolutionPath === 1) return { name: ascended ? "Nymoria" : "Nymora", art: null };
+    if (evolutionPath === 2) return { name: ascended ? "Noryth" : "Noryx", art: null };
+    return { name: "Noma", art: "/assets/noma-genesis.webp" };
+  }
+
+  if (evolutionPath === 1) return { name: ascended ? "Veyrion" : "Veyra", art: ascended ? null : veyraPreviewArt };
+  if (evolutionPath === 2) return { name: ascended ? "Vexaris" : "Vexus", art: ascended ? null : vexusPreviewArt };
+  return { name: "Vexa", art: "/assets/vexa-genesis.webp" };
+}
+
 export function CompanionVisual({
   label,
   mode = "dormant",
@@ -24,59 +42,16 @@ export function CompanionVisual({
   reaction?: CompanionReaction;
 }) {
   const family = FAMILIES[familyIndex] ?? FAMILIES[0];
-  const isVexa = family === "Vexa";
-  const isNoma = family === "Noma";
-  const isKoru = family === "Koru";
-
-  const vexaEvolvedArt = isVexa
-    ? evolutionPath === 1
-      ? veyraPreviewArt
-      : evolutionPath === 2
-        ? vexusPreviewArt
-        : null
-    : null;
-
-  const koruArtwork = evolutionPath === 1
-    ? ascended
-      ? "/assets/koralith.webp"
-      : "/assets/koraya.webp"
-    : evolutionPath === 2
-      ? ascended
-        ? "/assets/korvex.webp"
-        : "/assets/korvax.webp"
-      : "/assets/koru-genesis.webp";
-
-  const artwork = isNoma
-    ? "/assets/noma-genesis.webp"
-    : isKoru
-      ? koruArtwork
-      : vexaEvolvedArt ?? "/assets/vexa-genesis.webp";
-
-  const formName = isKoru
-    ? evolutionPath === 1
-      ? ascended ? "Koralith" : "Koraya"
-      : evolutionPath === 2
-        ? ascended ? "Korvex" : "Korvax"
-        : "Koru"
-    : isVexa && evolutionPath === 1
-      ? "Veyra"
-      : isVexa && evolutionPath === 2
-        ? "Vexus"
-        : family;
-
-  const evolved = evolutionPath > 0 && (isVexa || isKoru);
-  const formRank = ascended && isKoru && evolutionPath > 0
-    ? "ASCENDED FORM"
-    : evolved
-      ? "EVOLVED FORM"
-      : "GENESIS FORM";
+  const form = resolveForm(family, evolutionPath, ascended);
+  const evolved = evolutionPath > 0;
+  const formRank = ascended && evolved ? "ASCENDED FORM" : evolved ? "EVOLVED FORM" : "GENESIS FORM";
 
   const statusLabel = featured
     ? "FEATURED GENESIS"
-    : ascended && isKoru && evolutionPath > 0
-      ? "ASCENDED ACTIVE"
+    : ascended && evolved
+      ? form.art ? "ASCENDED ACTIVE" : "ASCENDED SIGNAL LOCKED"
       : evolved
-        ? "EVOLUTION ACTIVE"
+        ? form.art ? "EVOLUTION ACTIVE" : "EVOLUTION SIGNAL LOCKED"
         : mode === "awake"
           ? "IDENTITY LOCKED"
           : mode === "scan"
@@ -86,7 +61,7 @@ export function CompanionVisual({
   const reactionLabel = reaction === "idle" ? null : String(reaction).toUpperCase();
 
   return (
-    <div className={`companionCard ${styles.artCard} ${mode} family-${familyIndex} archetype-${archetypeIndex} ${styles[`reaction-${reaction}`]}`} aria-label={`${formName} Arc Companion visual`}>
+    <div className={`companionCard ${styles.artCard} ${mode} family-${familyIndex} archetype-${archetypeIndex} ${styles[`reaction-${reaction}`]}`} aria-label={`${form.name} Arc Companion visual`}>
       <div className="cardGrid" />
       <div className="signalHalo haloOne" />
       <div className="signalHalo haloTwo" />
@@ -95,11 +70,19 @@ export function CompanionVisual({
       <div className="scanLine" />
 
       <div className={styles.artStage}>
-        <img
-          className={`${styles.genesisArtwork} ${isNoma ? styles.nomaArtwork : ""} ${evolved ? styles.evolvedArtwork : ""}`}
-          src={artwork}
-          alt={`${formName}, an Arc Companion creature`}
-        />
+        {form.art ? (
+          <img
+            className={`${styles.genesisArtwork} ${family === "Noma" ? styles.nomaArtwork : ""} ${evolved ? styles.evolvedArtwork : ""}`}
+            src={form.art}
+            alt={`${form.name}, an Arc Companion creature`}
+          />
+        ) : (
+          <div className={styles.speciesPending} role="img" aria-label={`${form.name} production artwork is concealed`}>
+            <div className={styles.pendingCore} />
+            <strong>{form.name.toUpperCase()}</strong>
+            <span>{ascended ? "ASCENDED SIGNAL CONCEALED" : "EVOLUTION SIGNAL CONCEALED"}</span>
+          </div>
+        )}
         {reactionLabel && <span className={styles.reactionPulse}>{reactionLabel}</span>}
       </div>
 
@@ -107,7 +90,7 @@ export function CompanionVisual({
         <span><i /> ARC SIGNAL</span>
         <span>{statusLabel}</span>
       </div>
-      <div className="cardMeta"><span>{`${formName.toUpperCase()} · ${formRank}`}</span><strong>{label}</strong></div>
+      <div className="cardMeta"><span>{`${form.name.toUpperCase()} · ${formRank}`}</span><strong>{label}</strong></div>
     </div>
   );
 }
