@@ -27,7 +27,6 @@ export function CompanionVisual({
   const isVexa = family === "Vexa";
   const isNoma = family === "Noma";
   const isKoru = family === "Koru";
-  const hasProductionArt = isVexa || isNoma || isKoru;
 
   const vexaEvolvedArt = isVexa
     ? evolutionPath === 1
@@ -96,19 +95,11 @@ export function CompanionVisual({
       <div className="scanLine" />
 
       <div className={styles.artStage}>
-        {hasProductionArt ? (
-          <img
-            className={`${styles.genesisArtwork} ${isNoma ? styles.nomaArtwork : ""} ${evolved ? styles.evolvedArtwork : ""}`}
-            src={artwork}
-            alt={`${formName}, an Arc Companion creature`}
-          />
-        ) : (
-          <div className={styles.speciesPending} role="img" aria-label={`${family} visual identity is still concealed`}>
-            <div className={styles.pendingCore} />
-            <strong>{family.toUpperCase()}</strong>
-            <span>GENESIS SIGNAL CONCEALED</span>
-          </div>
-        )}
+        <img
+          className={`${styles.genesisArtwork} ${isNoma ? styles.nomaArtwork : ""} ${evolved ? styles.evolvedArtwork : ""}`}
+          src={artwork}
+          alt={`${formName}, an Arc Companion creature`}
+        />
         {reactionLabel && <span className={styles.reactionPulse}>{reactionLabel}</span>}
       </div>
 
