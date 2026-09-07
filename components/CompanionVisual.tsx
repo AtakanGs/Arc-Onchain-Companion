@@ -84,6 +84,8 @@ export function CompanionVisual({
             ? "SCANNING"
             : "DORMANT";
 
+  const reactionLabel = reaction === "idle" ? null : String(reaction).toUpperCase();
+
   return (
     <div className={`companionCard ${styles.artCard} ${mode} family-${familyIndex} archetype-${archetypeIndex} ${styles[`reaction-${reaction}`]}`} aria-label={`${formName} Arc Companion visual`}>
       <div className="cardGrid" />
@@ -107,7 +109,7 @@ export function CompanionVisual({
             <span>GENESIS SIGNAL CONCEALED</span>
           </div>
         )}
-        {reaction !== "idle" && <span className={styles.reactionPulse}>{reaction.toUpperCase()}</span>}
+        {reactionLabel && <span className={styles.reactionPulse}>{reactionLabel}</span>}
       </div>
 
       <div className="statusRail">
