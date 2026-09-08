@@ -12,13 +12,13 @@ function resolveForm(family: (typeof FAMILIES)[number], evolutionPath: number, a
   }
 
   if (family === "Noma") {
-    if (evolutionPath === 1) return { name: ascended ? "Nymoria" : "Nymora", art: null };
-    if (evolutionPath === 2) return { name: ascended ? "Noryth" : "Noryx", art: null };
+    if (evolutionPath === 1) return { name: ascended ? "Nymoria" : "Nymora", art: ascended ? "/assets/nymoria.webp" : "/assets/nymora.webp" };
+    if (evolutionPath === 2) return { name: ascended ? "Noryth" : "Noryx", art: ascended ? "/assets/noryth.webp" : "/assets/noryx.webp" };
     return { name: "Noma", art: "/assets/noma-genesis.webp" };
   }
 
-  if (evolutionPath === 1) return { name: ascended ? "Veyrion" : "Veyra", art: ascended ? null : veyraPreviewArt };
-  if (evolutionPath === 2) return { name: ascended ? "Vexaris" : "Vexus", art: ascended ? null : vexusPreviewArt };
+  if (evolutionPath === 1) return { name: ascended ? "Veyrion" : "Veyra", art: ascended ? "/assets/veyrion.webp" : veyraPreviewArt };
+  if (evolutionPath === 2) return { name: ascended ? "Vexaris" : "Vexus", art: ascended ? "/assets/vexaris.webp" : vexusPreviewArt };
   return { name: "Vexa", art: "/assets/vexa-genesis.webp" };
 }
 
@@ -49,9 +49,9 @@ export function CompanionVisual({
   const statusLabel = featured
     ? "FEATURED GENESIS"
     : ascended && evolved
-      ? form.art ? "ASCENDED ACTIVE" : "ASCENDED SIGNAL LOCKED"
+      ? "ASCENDED ACTIVE"
       : evolved
-        ? form.art ? "EVOLUTION ACTIVE" : "EVOLUTION SIGNAL LOCKED"
+        ? "EVOLUTION ACTIVE"
         : mode === "awake"
           ? "IDENTITY LOCKED"
           : mode === "scan"
@@ -70,19 +70,11 @@ export function CompanionVisual({
       <div className="scanLine" />
 
       <div className={styles.artStage}>
-        {form.art ? (
-          <img
-            className={`${styles.genesisArtwork} ${family === "Noma" ? styles.nomaArtwork : ""} ${evolved ? styles.evolvedArtwork : ""}`}
-            src={form.art}
-            alt={`${form.name}, an Arc Companion creature`}
-          />
-        ) : (
-          <div className={styles.speciesPending} role="img" aria-label={`${form.name} production artwork is concealed`}>
-            <div className={styles.pendingCore} />
-            <strong>{form.name.toUpperCase()}</strong>
-            <span>{ascended ? "ASCENDED SIGNAL CONCEALED" : "EVOLUTION SIGNAL CONCEALED"}</span>
-          </div>
-        )}
+        <img
+          className={`${styles.genesisArtwork} ${family === "Noma" ? styles.nomaArtwork : ""} ${evolved ? styles.evolvedArtwork : ""}`}
+          src={form.art}
+          alt={`${form.name}, an Arc Companion creature`}
+        />
         {reactionLabel && <span className={styles.reactionPulse}>{reactionLabel}</span>}
       </div>
 
