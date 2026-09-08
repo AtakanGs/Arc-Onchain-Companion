@@ -17,8 +17,8 @@ function resolveForm(family: (typeof FAMILIES)[number], evolutionPath: number, a
     return { name: "Noma", art: "/assets/noma-genesis.webp" };
   }
 
-  if (evolutionPath === 1) return { name: ascended ? "Veyrion" : "Veyra", art: ascended ? null : veyraPreviewArt };
-  if (evolutionPath === 2) return { name: ascended ? "Vexaris" : "Vexus", art: ascended ? null : vexusPreviewArt };
+  if (evolutionPath === 1) return { name: ascended ? "Veyrion" : "Veyra", art: ascended ? "/assets/veyrion.webp" : veyraPreviewArt };
+  if (evolutionPath === 2) return { name: ascended ? "Vexaris" : "Vexus", art: ascended ? "/assets/vexaris.webp" : vexusPreviewArt };
   return { name: "Vexa", art: "/assets/vexa-genesis.webp" };
 }
 
