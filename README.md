@@ -17,6 +17,7 @@ Arc Companion is a consumer dApp for Arc Testnet. Each wallet discovers a unique
 - XP, streaks, Streak Shields, 7/30/100-day milestones.
 - One permanent branching evolution for every family.
 - Public companion share route at `/share/<tokenId>`.
+- Real Circle App Kit Arc Testnet swap quest at `/quest/swap` with live estimate, slippage control and completed-transaction verification.
 - Dynamic metadata base URI foundation.
 
 ## Evolution trees
@@ -24,15 +25,17 @@ Arc Companion is a consumer dApp for Arc Testnet. Each wallet discovers a unique
 - Vexa → Veyra → Veyrion
 - Vexa → Vexus → Vexaris
 
+Veyrion and Vexaris use the locked production artwork and are revealed at the Ascended milestone.
+
 ### Noma
 - Noma → Nymora → Nymoria
 - Noma → Noryx → Noryth
 
+The evolved/Ascended Noma artwork remains intentionally concealed until the exact previously locked production-source mapping is confirmed. It should not be regenerated just to fill a slot.
+
 ### Koru
 - Koru → Koraya → Koralith
 - Koru → Korvax → Korvex
-
-The evolved/Ascended Noma artwork and Veyrion/Vexaris artwork remain intentionally concealed until the previously locked production source assets are safely added. They should not be regenerated just to fill a slot.
 
 Korvex currently uses the locked Korvax production visual by design to avoid visual drift.
 
@@ -63,9 +66,7 @@ GitHub Actions runs artwork verification, contract compilation, contract tests, 
 Use `docs/FINAL_QA.md` as the final release checklist before calling Builder V1 complete.
 
 ## Circle / Arc App Kit quest
-The next transactional quest is a real Arc Testnet swap using Circle/Arc App Kit. Do not ship a simulated swap. The quest should be enabled only after the selected App Kit wallet adapter, credentials, quote/slippage handling and transaction verification are configured and tested.
-
-Official Arc App Kit documentation currently shows `@circle-fin/app-kit` with wallet adapters such as `@circle-fin/adapter-viem-v2` and Circle Wallets adapters for Arc Testnet workflows.
+`/quest/swap` performs a real Arc Testnet USDC → EURC swap using Circle App Kit and the injected browser wallet. The UI requests a live estimate first, exposes slippage tolerance, and only reports completion after App Kit returns a transaction hash and completed status. Arc Testnet liquidity can be unstable, so the final real-wallet release check must still review the live quote before signing.
 
 ## Deploy
 Use a dedicated Arc Testnet deployer wallet when possible. Never commit or share its private key. Put `DEPLOYER_PRIVATE_KEY` only in the ignored local `.env` file and fund the address with Arc Testnet USDC from the Circle Faucet.
