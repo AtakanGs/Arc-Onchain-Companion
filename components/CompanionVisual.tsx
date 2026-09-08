@@ -12,8 +12,8 @@ function resolveForm(family: (typeof FAMILIES)[number], evolutionPath: number, a
   }
 
   if (family === "Noma") {
-    if (evolutionPath === 1) return { name: ascended ? "Nymoria" : "Nymora", art: null };
-    if (evolutionPath === 2) return { name: ascended ? "Noryth" : "Noryx", art: null };
+    if (evolutionPath === 1) return { name: ascended ? "Nymoria" : "Nymora", art: ascended ? "/assets/nymoria.webp" : "/assets/nymora.webp" };
+    if (evolutionPath === 2) return { name: ascended ? "Noryth" : "Noryx", art: ascended ? "/assets/noryth.webp" : "/assets/noryx.webp" };
     return { name: "Noma", art: "/assets/noma-genesis.webp" };
   }
 
