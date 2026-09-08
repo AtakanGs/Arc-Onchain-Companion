@@ -28,7 +28,7 @@ type CompanionState = {
 };
 
 type Status = "idle" | "loading" | "care" | "evolution" | "ready" | "error";
-type EvolutionPathCard = { label: string; name: string; copy: string; target: string; art: string | null };
+type EvolutionPathCard = { label: string; name: string; copy: string; target: string; art: string };
 
 function shortAddress(address: string) {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
@@ -60,8 +60,8 @@ function evolutionCards(family: string): [EvolutionPathCard, EvolutionPathCard] 
     { label: "PATH 02 · GUARDIAN", name: "Korvax", copy: "Grounded, powerful and protective. The guardian core condenses into a heavier defensive form.", target: "Korvex", art: "/assets/korvax.webp" },
   ];
   if (family === "Noma") return [
-    { label: "PATH 01 · SERENE", name: "Nymora", copy: "Fluid, receptive and ceremonial. Memory light stretches into layered fins and a calmer guardian presence.", target: "Nymoria", art: null },
-    { label: "PATH 02 · PSIONIC", name: "Noryx", copy: "Compact, focused and precise. The memory core sharpens into controlled geometry and crystal orbitals.", target: "Noryth", art: null },
+    { label: "PATH 01 · SERENE", name: "Nymora", copy: "Fluid, receptive and ceremonial. Memory light stretches into layered fins and a calmer guardian presence.", target: "Nymoria", art: "/assets/nymora.webp" },
+    { label: "PATH 02 · PSIONIC", name: "Noryx", copy: "Compact, focused and precise. The memory core sharpens into controlled geometry and crystal orbitals.", target: "Noryth", art: "/assets/noryx.webp" },
   ];
   return [
     { label: "PATH 01 · HARMONY", name: "Veyra", copy: "Graceful, intuitive and fluid. Arc energy becomes part of movement.", target: "Veyrion", art: veyraPreviewArt },
@@ -243,7 +243,7 @@ export default function CompanionHome() {
                 const pathNumber = (index + 1) as 1 | 2;
                 return (
                   <article className={`pathCard ${pendingEvolution === pathNumber ? "selected" : ""}`} key={path.name}>
-                    {path.art ? <img src={path.art} alt={`${path.name} evolution preview`} /> : <div className="pathArtPending"><span>VISUAL SIGNAL CONCEALED</span><strong>{path.name}</strong></div>}
+                    <img src={path.art} alt={`${path.name} evolution preview`} />
                     <span>{path.label}</span><h3>{path.name}</h3><p>{path.copy}</p><strong>Ascended target: {path.target}</strong>
                     <button onClick={() => setPendingEvolution(pathNumber)} disabled={!evolutionUnlocked || status === "evolution"}>{evolutionUnlocked ? `Preview ${path.name} path` : "Locked until 1,000 XP"}</button>
                   </article>
@@ -260,7 +260,7 @@ export default function CompanionHome() {
         ) : (
           <div className="chosenEvolution">
             <div><span>CURRENT FORM</span><strong>{ascendedReached ? ascendedName : evolvedName}</strong><p>Your permanent evolution path is stored on Arc.</p></div>
-            <div><span>ASCENDED DESTINY</span><strong>{ascendedName}</strong><p>{ascendedReached ? "The 100-day milestone is complete. Your Ascended chapter is active; locked production art is revealed only when its asset is available." : "Reach the 100-day milestone to unlock the Ascended chapter."}</p></div>
+            <div><span>ASCENDED DESTINY</span><strong>{ascendedName}</strong><p>{ascendedReached ? "The 100-day milestone is complete. Your Ascended form is active." : "Reach the 100-day milestone to unlock the Ascended chapter."}</p></div>
           </div>
         )}
       </section>
