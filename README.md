@@ -31,7 +31,7 @@ Veyrion and Vexaris use the locked production artwork and are revealed at the As
 - Noma → Nymora → Nymoria
 - Noma → Noryx → Noryth
 
-The evolved/Ascended Noma artwork remains intentionally concealed until the exact previously locked production-source mapping is confirmed. It should not be regenerated just to fill a slot.
+Nymora, Nymoria, Noryx and Noryth use the locked production artwork. Evolved forms appear after the permanent path choice and Ascended forms are revealed at the 100-day milestone.
 
 ### Koru
 - Koru → Koraya → Koralith
