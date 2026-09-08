@@ -13,6 +13,10 @@ const VEXA_EXPECTED_BYTES = 85070;
 const VEXA_EXPECTED_SHA256 = "45059ef3589e3b7a5ca2bd452a5480c4e11b39e156b446d5520e84577a9355b0";
 const NOMA_EXPECTED_BYTES = 47698;
 const NOMA_EXPECTED_SHA256 = "882995a961876e3f7f1921aa924770c3ea1db68b75b0d141e42db26a7356d6a0";
+const VEXA_ASCENDED = [
+  { file: "veyrion.webp", label: "Veyrion Ascended production art", bytes: 8466, sha256: "bb592a7ca446bac53e0d44ef8ecf33cde649891c5a3e1f131ec99336512d9237" },
+  { file: "vexaris.webp", label: "Vexaris Ascended production art", bytes: 8652, sha256: "bdc87c65a8414a92cd726ab0731c98a7d8cca76de3f9843a013d774beb240cfa" },
+];
 const NOMA_CHUNK_SHA256 = [
   "7aeb26f6750838ccab76efc92f08f52bd9e9204d3ba05715c78c5e836c0ffcd2",
   "e5fb1b05346fd627080a4c6144fc2c6e3e83ca787961051565de9fad1baf5669",
@@ -75,3 +79,6 @@ fs.writeFileSync(vexaOutputFile, Buffer.from(vexaEncoded, "base64"));
 fs.writeFileSync(nomaOutputFile, Buffer.from(nomaEncoded, "base64"));
 verifyWebp(vexaOutputFile, "Vexa Genesis static asset", VEXA_EXPECTED_BYTES, VEXA_EXPECTED_SHA256);
 verifyWebp(nomaOutputFile, "Noma Genesis production art", NOMA_EXPECTED_BYTES, NOMA_EXPECTED_SHA256);
+for (const asset of VEXA_ASCENDED) {
+  verifyWebp(path.join(outputDir, asset.file), asset.label, asset.bytes, asset.sha256);
+}
