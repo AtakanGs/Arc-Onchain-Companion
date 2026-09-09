@@ -27,6 +27,8 @@
 .pathCard { border:1px solid var(--line); border-radius:22px; padding:18px; background:rgba(255,255,255,.025); transition:border-color .2s ease, transform .2s ease, background .2s ease; }
 .pathCard.selected { border-color:rgba(214,255,87,.42); background:rgba(214,255,87,.045); transform:translateY(-2px); }
 .pathCard img { width:100%; height:205px; display:block; object-fit:contain; border-radius:15px; background:radial-gradient(circle,rgba(116,73,220,.16),transparent 65%); }
+/* Noryx is intentionally shown as a complete illustration; retain the locked cosmic background and crop it like premium card art. */
+.pathCard img[alt^="Noryx "] { object-fit:cover; object-position:50% 42%; background:#090b18; box-shadow:inset 0 0 0 1px rgba(196,170,255,.12), 0 14px 34px rgba(43,24,91,.22); }
 .pathCard > span, .chosenEvolution span, .evolutionConfirm span { display:block; margin-top:15px; color:var(--accent); font-size:9px; font-weight:800; letter-spacing:.14em; }
 .pathCard h3 { margin:7px 0 8px; font-size:30px; }
 .pathCard p, .chosenEvolution p, .evolutionConfirm p { color:var(--muted); line-height:1.55; font-size:13px; }
@@ -48,4 +50,5 @@
   .evolutionHeader, .evolutionConfirm { flex-direction:column; }
   .confirmActions { width:100%; }
   .confirmActions button { flex:1; }
+  .pathCard img[alt^="Noryx "] { height:230px; object-position:50% 40%; }
 }
