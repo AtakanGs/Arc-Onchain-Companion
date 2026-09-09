@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createWalletClient, custom } from "viem";
 import { arcTestnet } from "viem/chains";
 import { CompanionVisual, type CompanionReaction } from "../../components/CompanionVisual";
@@ -79,6 +79,7 @@ export default function CompanionHome() {
   const [selectedActions, setSelectedActions] = useState<string[]>([]);
   const [reaction, setReaction] = useState<CompanionReaction>("idle");
   const [pendingEvolution, setPendingEvolution] = useState<0 | 1 | 2>(0);
+  const [restoring, setRestoring] = useState(true);
 
   const moment = useMemo(() => companion ? dailyMoment(companion.dna) : null, [companion]);
   const completedToday = companion ? companion.lastCareDay === utcDayIndex() : false;
@@ -117,6 +118,34 @@ export default function CompanionHome() {
       setMessage(cause instanceof Error ? cause.message : "Could not load companion state.");
     }
   }
+
+  useEffect(() => {
+    let active = true;
+
+    async function restoreAuthorizedWallet() {
+      const ethereum = (window as Window & { ethereum?: EthereumProvider }).ethereum;
+      if (!ethereum) {
+        if (active) setRestoring(false);
+        return;
+      }
+
+      try {
+        const accounts = await ethereum.request({ method: "eth_accounts" }) as `0x${string}`[];
+        const owner = accounts[0];
+        if (owner && active) {
+          setAddress(owner);
+          await refresh(owner);
+        }
+      } catch {
+        // Silent restore should never trigger a wallet prompt or block the manual connect fallback.
+      } finally {
+        if (active) setRestoring(false);
+      }
+    }
+
+    void restoreAuthorizedWallet();
+    return () => { active = false; };
+  }, []);
 
   async function connect() {
     const ethereum = (window as Window & { ethereum?: EthereumProvider }).ethereum;
@@ -179,11 +208,21 @@ export default function CompanionHome() {
         <nav className="nav"><strong>ARC COMPANION</strong><span className="network">Companion Home</span></nav>
         <section className="homeEmpty">
           <p className="eyebrow">RETURN TO YOUR COMPANION</p>
-          <h1>Your Arc day starts here.</h1>
-          <p className="lede">Connect the wallet that owns your soulbound companion. The app will read its latest state directly from Arc.</p>
-          <button onClick={connect} disabled={status === "loading"}>{status === "loading" ? "Reading Arc…" : "Connect wallet"}</button>
-          {message && <p className="errorText">{message}</p>}
-          {status === "error" && tokenId === 0n && <a className="textLink" href="/">Return to genesis</a>}
+          {restoring ? (
+            <>
+              <h1>Opening your companion…</h1>
+              <p className="lede">Reading the wallet already authorized for this site. No second connection request is needed.</p>
+              <p className="micro">Restoring your Arc companion…</p>
+            </>
+          ) : (
+            <>
+              <h1>Your Arc day starts here.</h1>
+              <p className="lede">If this browser is not already authorized, connect the wallet that owns your soulbound companion.</p>
+              <button onClick={connect} disabled={status === "loading"}>{status === "loading" ? "Reading Arc…" : "Connect wallet"}</button>
+              {message && <p className="errorText">{message}</p>}
+              {status === "error" && tokenId === 0n && <a className="textLink" href="/">Return to genesis</a>}
+            </>
+          )}
         </section>
       </main>
     );
@@ -243,7 +282,9 @@ export default function CompanionHome() {
                 const pathNumber = (index + 1) as 1 | 2;
                 return (
                   <article className={`pathCard ${pendingEvolution === pathNumber ? "selected" : ""}`} key={path.name}>
-                    <img src={path.art} alt={`${path.name} evolution preview`} />
+                    <div className={`pathArtwork pathArtwork-${path.name.toLowerCase()}`}>
+                      <img src={path.art} alt={`${path.name} evolution preview`} />
+                    </div>
                     <span>{path.label}</span><h3>{path.name}</h3><p>{path.copy}</p><strong>Ascended target: {path.target}</strong>
                     <button onClick={() => setPendingEvolution(pathNumber)} disabled={!evolutionUnlocked || status === "evolution"}>{evolutionUnlocked ? `Preview ${path.name} path` : "Locked until 1,000 XP"}</button>
                   </article>
