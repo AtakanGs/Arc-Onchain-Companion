@@ -59,31 +59,32 @@
   filter: saturate(1.02) contrast(1.04) drop-shadow(0 24px 48px rgba(166, 94, 255, .34));
 }
 
-/* Noryx is a locked full-illustration asset. Preserve the complete cosmic background and avoid a face-heavy crop. */
+/* Noryx uses the locked source art, but the black source canvas is blended into the card's cosmic field instead of appearing as a pasted rectangle. */
 .genesisArtwork[alt^="Noryx,"] {
-  width: 100%;
-  height: 100%;
+  width: 94%;
+  height: 92%;
   object-fit: contain;
   object-position: center;
-  border-radius: 20px;
-  background: #090b18;
+  border-radius: 0;
+  background: transparent;
   transform: scale(.96);
-  filter: saturate(1.04) contrast(1.04);
+  mix-blend-mode: screen;
+  filter: saturate(1.06) contrast(1.04) brightness(1.02);
 }
 
 :global(.companionCard.dormant) .genesisArtwork[alt^="Noryx,"] {
-  transform: scale(.93);
-  filter: saturate(.92) brightness(.9) contrast(1.03);
+  transform: scale(.92);
+  filter: saturate(.94) brightness(.9) contrast(1.03);
 }
 
 :global(.companionCard.scan) .genesisArtwork[alt^="Noryx,"] {
-  transform: scale(.95);
-  filter: saturate(.98) brightness(.97) contrast(1.04);
+  transform: scale(.94);
+  filter: saturate(1) brightness(.97) contrast(1.04);
 }
 
 :global(.companionCard.awake) .genesisArtwork[alt^="Noryx,"] {
-  transform: scale(.975);
-  filter: saturate(1.06) contrast(1.05);
+  transform: scale(.97);
+  filter: saturate(1.08) contrast(1.05) brightness(1.03);
 }
 
 .reaction-feed .genesisArtwork { animation: reactionFeed .7s ease both; }
@@ -186,6 +187,6 @@
   .artStage { inset: 24px 14px 102px; }
   .genesisArtwork { transform: scale(.94); }
   .evolvedArtwork { width: 100%; height: 78%; }
-  .genesisArtwork[alt^="Noryx,"] { width:100%; height:100%; object-fit:contain; object-position:center; transform:scale(.94); }
-  :global(.companionCard.awake) .genesisArtwork[alt^="Noryx,"] { transform:scale(.96); }
+  .genesisArtwork[alt^="Noryx,"] { width:96%; height:90%; transform:scale(.91); }
+  :global(.companionCard.awake) .genesisArtwork[alt^="Noryx,"] { transform:scale(.93); }
 }
