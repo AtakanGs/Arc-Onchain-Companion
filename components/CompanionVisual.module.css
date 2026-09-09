@@ -59,29 +59,30 @@
   filter: saturate(1.02) contrast(1.04) drop-shadow(0 24px 48px rgba(166, 94, 255, .34));
 }
 
-/* Noryx is a locked full-illustration asset. Preserve its cosmic background instead of treating it as a transparent character cutout. */
+/* Noryx is a locked full-illustration asset. Preserve the complete cosmic background and avoid a face-heavy crop. */
 .genesisArtwork[alt^="Noryx,"] {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  object-position: 50% 44%;
+  object-fit: contain;
+  object-position: center;
   border-radius: 20px;
-  transform: scale(1);
+  background: #090b18;
+  transform: scale(.96);
   filter: saturate(1.04) contrast(1.04);
 }
 
 :global(.companionCard.dormant) .genesisArtwork[alt^="Noryx,"] {
-  transform: scale(.985);
+  transform: scale(.93);
   filter: saturate(.92) brightness(.9) contrast(1.03);
 }
 
 :global(.companionCard.scan) .genesisArtwork[alt^="Noryx,"] {
-  transform: scale(1);
+  transform: scale(.95);
   filter: saturate(.98) brightness(.97) contrast(1.04);
 }
 
 :global(.companionCard.awake) .genesisArtwork[alt^="Noryx,"] {
-  transform: scale(1.018);
+  transform: scale(.975);
   filter: saturate(1.06) contrast(1.05);
 }
 
@@ -185,6 +186,6 @@
   .artStage { inset: 24px 14px 102px; }
   .genesisArtwork { transform: scale(.94); }
   .evolvedArtwork { width: 100%; height: 78%; }
-  .genesisArtwork[alt^="Noryx,"] { width:100%; height:100%; object-position:50% 42%; transform:scale(1); }
-  :global(.companionCard.awake) .genesisArtwork[alt^="Noryx,"] { transform:scale(1.01); }
+  .genesisArtwork[alt^="Noryx,"] { width:100%; height:100%; object-fit:contain; object-position:center; transform:scale(.94); }
+  :global(.companionCard.awake) .genesisArtwork[alt^="Noryx,"] { transform:scale(.96); }
 }
