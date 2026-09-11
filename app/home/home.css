@@ -23,19 +23,93 @@
 .evolutionLock.unlocked { border-color:rgba(214,255,87,.34); color:var(--accent); background:rgba(214,255,87,.06); }
 .evolutionProgress { height:5px; margin:24px 0 28px; border-radius:999px; overflow:hidden; background:rgba(255,255,255,.07); }
 .evolutionProgress i { display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg,#816cff,var(--accent)); transition:width .35s ease; }
-.pathGrid { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; align-items:stretch; }
-.pathCard { border:1px solid var(--line); border-radius:22px; padding:18px; background:linear-gradient(180deg,rgba(255,255,255,.032),rgba(255,255,255,.018)); transition:border-color .2s ease, transform .2s ease, background .2s ease; display:flex; flex-direction:column; }
-.pathCard.selected { border-color:rgba(214,255,87,.42); background:linear-gradient(180deg,rgba(214,255,87,.055),rgba(214,255,87,.025)); transform:translateY(-2px); }
-.pathArtwork { position:relative; width:100%; height:260px; overflow:hidden; border-radius:18px; border:1px solid rgba(170,135,255,.13); background:radial-gradient(circle at 50% 34%,rgba(145,104,255,.28),transparent 32%),radial-gradient(circle at 20% 80%,rgba(79,203,255,.10),transparent 28%),linear-gradient(145deg,#080b18 0%,#11142a 55%,#090c18 100%); box-shadow:inset 0 0 50px rgba(83,47,160,.10),0 16px 38px rgba(0,0,0,.20); }
-.pathArtwork::before { content:""; position:absolute; inset:0; pointer-events:none; opacity:.55; background-image:radial-gradient(circle at 12% 24%,rgba(255,255,255,.8) 0 1px,transparent 1.5px),radial-gradient(circle at 72% 18%,rgba(207,191,255,.8) 0 1px,transparent 1.5px),radial-gradient(circle at 86% 66%,rgba(255,255,255,.65) 0 1px,transparent 1.5px),radial-gradient(circle at 28% 72%,rgba(156,225,255,.6) 0 1px,transparent 1.5px); }
-.pathArtwork img { position:relative; z-index:1; width:100%; height:100%; display:block; object-fit:contain; object-position:center; background:transparent; }
-.pathArtwork-nymora img { object-fit:contain; object-position:50% 48%; transform:scale(.94); border-radius:14px; }
-.pathArtwork-noryx img { object-fit:contain; object-position:center; transform:scale(.90); mix-blend-mode:screen; filter:saturate(1.06) contrast(1.04) brightness(1.02); }
-.pathCard > span, .chosenEvolution span, .evolutionConfirm span { display:block; margin-top:15px; color:var(--accent); font-size:9px; font-weight:800; letter-spacing:.14em; }
-.pathCard h3 { margin:7px 0 8px; font-size:30px; }
+
+/* Evolution choice cards intentionally use the full locked illustration as a portrait preview.
+   This keeps every family on the same visual system without forcing portrait artwork into a wide crop. */
+.pathGrid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; align-items:stretch; }
+.pathCard {
+  border:1px solid var(--line);
+  border-radius:22px;
+  padding:16px;
+  background:linear-gradient(180deg,rgba(255,255,255,.034),rgba(255,255,255,.016));
+  transition:border-color .2s ease, transform .2s ease, background .2s ease, box-shadow .2s ease;
+  display:grid;
+  grid-template-columns:minmax(148px,.72fr) minmax(0,1.28fr);
+  grid-template-rows:auto auto minmax(0,1fr) auto auto;
+  column-gap:18px;
+  row-gap:0;
+  align-items:start;
+}
+.pathCard:hover { border-color:rgba(168,140,255,.26); box-shadow:0 18px 42px rgba(0,0,0,.18); }
+.pathCard.selected { border-color:rgba(214,255,87,.42); background:linear-gradient(180deg,rgba(214,255,87,.055),rgba(214,255,87,.025)); transform:translateY(-2px); box-shadow:0 20px 48px rgba(0,0,0,.22); }
+.pathArtwork {
+  position:relative;
+  grid-column:1;
+  grid-row:1 / 6;
+  align-self:center;
+  width:100%;
+  height:auto;
+  aspect-ratio:4 / 5;
+  overflow:hidden;
+  border-radius:17px;
+  border:1px solid rgba(170,135,255,.18);
+  background:#080b18;
+  box-shadow:inset 0 0 50px rgba(83,47,160,.10),0 16px 38px rgba(0,0,0,.24);
+  isolation:isolate;
+}
+.pathArtwork::before {
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:2;
+  pointer-events:none;
+  background:linear-gradient(180deg,rgba(4,6,13,.02) 48%,rgba(4,6,13,.28) 100%);
+}
+.pathArtwork::after {
+  content:"PATH PREVIEW";
+  position:absolute;
+  z-index:3;
+  left:10px;
+  bottom:10px;
+  padding:6px 8px;
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:999px;
+  background:rgba(5,7,13,.64);
+  backdrop-filter:blur(8px);
+  color:rgba(240,242,248,.82);
+  font-size:8px;
+  font-weight:800;
+  letter-spacing:.13em;
+}
+.pathArtwork img {
+  position:absolute;
+  inset:0;
+  z-index:1;
+  width:100%;
+  height:100%;
+  display:block;
+  object-fit:cover;
+  object-position:center;
+  background:transparent;
+  transform:none;
+  mix-blend-mode:normal;
+  filter:none;
+  transition:transform .24s ease, filter .24s ease;
+}
+.pathCard.selected .pathArtwork { border-color:rgba(214,255,87,.34); }
+.pathCard.selected .pathArtwork img { transform:scale(1.015); filter:saturate(1.03) brightness(1.02); }
+.pathArtwork-nymora img,
+.pathArtwork-noryx img { object-fit:cover; object-position:50% 50%; transform:none; mix-blend-mode:normal; filter:none; border-radius:0; }
+
+.pathCard > span { grid-column:2; grid-row:1; margin-top:2px; }
+.pathCard h3 { grid-column:2; grid-row:2; margin:7px 0 8px; font-size:30px; line-height:1.04; }
+.pathCard p { grid-column:2; grid-row:3; margin:0; }
+.pathCard > strong { grid-column:2; grid-row:4; }
+.pathCard button { grid-column:2; grid-row:5; width:100%; margin:16px 0 0; align-self:end; }
+.pathCard > span, .chosenEvolution span, .evolutionConfirm span { display:block; color:var(--accent); font-size:9px; font-weight:800; letter-spacing:.14em; }
 .pathCard p, .chosenEvolution p, .evolutionConfirm p { color:var(--muted); line-height:1.55; font-size:13px; }
 .pathCard > strong { display:block; margin-top:12px; font-size:12px; color:#d8dbe5; }
-.pathCard button { width:100%; margin-top:auto; padding-top:16px; }
+
 .evolutionConfirm { margin-top:18px; border:1px solid rgba(214,255,87,.27); border-radius:20px; padding:20px; background:linear-gradient(110deg,rgba(122,86,245,.12),rgba(214,255,87,.035)); display:flex; justify-content:space-between; align-items:center; gap:20px; }
 .evolutionConfirm strong { display:block; margin-top:6px; font-size:22px; }
 .confirmActions { display:flex; align-items:center; gap:8px; flex:0 0 auto; }
@@ -52,7 +126,18 @@
   .evolutionHeader, .evolutionConfirm { flex-direction:column; }
   .confirmActions { width:100%; }
   .confirmActions button { flex:1; }
-  .pathArtwork { height:250px; }
-  .pathArtwork-nymora img { transform:scale(.92); }
-  .pathArtwork-noryx img { transform:scale(.86); }
+  .pathCard { grid-template-columns:minmax(160px,.58fr) minmax(0,1.42fr); column-gap:20px; }
+  .pathArtwork { max-width:190px; justify-self:center; }
+}
+
+@media (max-width:520px) {
+  .evolutionPanel { padding:20px 16px; }
+  .pathGrid { gap:12px; }
+  .pathCard { grid-template-columns:112px minmax(0,1fr); column-gap:14px; padding:12px; border-radius:18px; }
+  .pathArtwork { width:112px; border-radius:14px; }
+  .pathArtwork::after { left:7px; bottom:7px; padding:5px 6px; font-size:7px; letter-spacing:.09em; }
+  .pathCard h3 { font-size:24px; margin:6px 0 7px; }
+  .pathCard p { font-size:12px; line-height:1.45; }
+  .pathCard > strong { margin-top:9px; font-size:11px; }
+  .pathCard button { margin-top:12px; padding-left:10px; padding-right:10px; }
 }
