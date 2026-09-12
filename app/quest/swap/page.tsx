@@ -8,6 +8,7 @@ import styles from "./swap.module.css";
 
 const ARC_CHAIN_ID_HEX = "0x4CEF52";
 const kit = new AppKit();
+const SLIPPAGE_PRESETS = [0.5, 1, 2] as const;
 
 type Estimate = {
   estimatedOutput?: { amount?: string; token?: string };
@@ -39,9 +40,13 @@ function formatRate(amountIn: string, amountOut?: string) {
   return `1 USDC = ${(output / input).toFixed(4)} EURC`;
 }
 
+function formatPercent(value: number) {
+  return Number.isInteger(value) ? value.toFixed(0) : value.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
+}
+
 export default function ArcSwapQuestPage() {
   const [amount, setAmount] = useState("1.00");
-  const [slippageBps, setSlippageBps] = useState(50);
+  const [slippagePct, setSlippagePct] = useState("0.5");
   const [estimate, setEstimate] = useState<Estimate | null>(null);
   const [result, setResult] = useState<SwapResult | null>(null);
   const [status, setStatus] = useState<"idle" | "estimating" | "swapping" | "done" | "error">("idle");
@@ -51,6 +56,10 @@ export default function ArcSwapQuestPage() {
     const parsed = Number(amount);
     return Number.isFinite(parsed) && parsed > 0 && parsed <= 100;
   }, [amount]);
+
+  const slippageValue = Number(slippagePct);
+  const validSlippage = Number.isFinite(slippageValue) && slippageValue >= 0.1 && slippageValue <= 5;
+  const slippageBps = validSlippage ? Math.round(slippageValue * 100) : 50;
 
   const outputAmount = estimate?.estimatedOutput?.amount;
   const outputToken = estimate?.estimatedOutput?.token ?? "EURC";
@@ -68,8 +77,14 @@ export default function ArcSwapQuestPage() {
     setStatus("idle");
   }
 
+  function updateSlippage(value: string) {
+    setSlippagePct(value);
+    resetQuote();
+  }
+
   async function adapterAndParams() {
     if (!window.ethereum) throw new Error("No injected EVM wallet was found.");
+    if (!validSlippage) throw new Error("Set slippage between 0.1% and 5%.");
     await window.ethereum.request({ method: "eth_requestAccounts" });
     await window.ethereum.request({ method: "wallet_switchEthereumChain", params: [{ chainId: ARC_CHAIN_ID_HEX }] });
 
@@ -85,7 +100,7 @@ export default function ArcSwapQuestPage() {
   }
 
   async function getEstimate() {
-    if (!validAmount) return;
+    if (!validAmount || !validSlippage) return;
     try {
       setStatus("estimating");
       setMessage("");
@@ -101,7 +116,7 @@ export default function ArcSwapQuestPage() {
   }
 
   async function executeSwap() {
-    if (!estimate || !validAmount) return;
+    if (!estimate || !validAmount || !validSlippage) return;
     try {
       setStatus("swapping");
       setMessage("");
@@ -141,19 +156,43 @@ export default function ArcSwapQuestPage() {
               <strong>Swap Quest</strong>
               <span>USDC → EURC · Arc Testnet</span>
             </div>
-            <label className={styles.settings}>
-              <span>Slippage</span>
-              <select
-                value={slippageBps}
-                onChange={(event) => { setSlippageBps(Number(event.target.value)); resetQuote(); }}
-                aria-label="Slippage tolerance"
-              >
-                <option value={50}>0.5%</option>
-                <option value={100}>1.0%</option>
-                <option value={200}>2.0%</option>
-                <option value={300}>3.0%</option>
-              </select>
-            </label>
+            <span className={styles.headerBadge}>Stable pair</span>
+          </div>
+
+          <div className={styles.slippagePanel}>
+            <div className={styles.slippageTopline}>
+              <div>
+                <strong>Slippage tolerance</strong>
+                <span>0.5% is the default for this stable pair.</span>
+              </div>
+              <span className={styles.slippageCurrent}>{validSlippage ? `${formatPercent(slippageValue)}%` : "Invalid"}</span>
+            </div>
+            <div className={styles.slippageControls}>
+              <div className={styles.slippagePresets}>
+                {SLIPPAGE_PRESETS.map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    className={`${styles.slippagePreset} ${slippageValue === preset ? styles.slippagePresetActive : ""}`}
+                    onClick={() => updateSlippage(String(preset))}
+                  >
+                    {preset}%
+                  </button>
+                ))}
+              </div>
+              <label className={`${styles.customSlippage} ${!validSlippage ? styles.customSlippageInvalid : ""}`}>
+                <span>Custom</span>
+                <input
+                  value={slippagePct}
+                  onChange={(event) => updateSlippage(event.target.value)}
+                  inputMode="decimal"
+                  aria-label="Custom slippage percentage"
+                  placeholder="0.5"
+                />
+                <b>%</b>
+              </label>
+            </div>
+            {!validSlippage && <p className={styles.slippageError}>Enter a slippage value between 0.1% and 5%.</p>}
           </div>
 
           <div className={styles.tokenPanel}>
@@ -189,20 +228,20 @@ export default function ArcSwapQuestPage() {
             <div className={styles.quoteGrid}>
               <div className={styles.quoteRow}><span>Rate</span><strong>{rate}</strong></div>
               <div className={styles.quoteRow}><span>Minimum received</span><strong>{minimumAmount ? `${minimumAmount} ${minimumToken}` : "Available after quote"}</strong></div>
-              <div className={styles.quoteRow}><span>Slippage tolerance</span><strong>{slippageBps / 100}%</strong></div>
+              <div className={styles.quoteRow}><span>Slippage tolerance</span><strong>{validSlippage ? `${formatPercent(slippageValue)}%` : "Invalid"}</strong></div>
               <div className={styles.quoteRow}><span>Route</span><strong>Circle App Kit</strong></div>
               {estimate && <div className={styles.quoteRow}><span>Fees</span><strong>{feeSummary}</strong></div>}
             </div>
           </div>
 
           {!estimate && !result && (
-            <button className={styles.primaryButton} onClick={getEstimate} disabled={!validAmount || status === "estimating" || status === "swapping"}>
-              {status === "estimating" ? "Fetching live quote…" : validAmount ? "Get live quote" : "Enter an amount"}
+            <button className={styles.primaryButton} onClick={getEstimate} disabled={!validAmount || !validSlippage || status === "estimating" || status === "swapping"}>
+              {status === "estimating" ? "Fetching live quote…" : !validSlippage ? "Set valid slippage" : validAmount ? "Get live quote" : "Enter an amount"}
             </button>
           )}
 
           {estimate && !result && (
-            <button className={styles.primaryButton} onClick={executeSwap} disabled={status === "swapping"}>
+            <button className={styles.primaryButton} onClick={executeSwap} disabled={!validSlippage || status === "swapping"}>
               {status === "swapping" ? "Confirm in wallet…" : `Swap ${amount} USDC → ${outputToken}`}
             </button>
           )}
