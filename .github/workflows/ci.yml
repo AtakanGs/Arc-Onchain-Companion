@@ -10,7 +10,7 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     steps:
       - name: Checkout
@@ -40,3 +40,30 @@ jobs:
 
       - name: Build frontend
         run: npm run build
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Start production app
+        run: |
+          npm run start > /tmp/arc-companion-next.log 2>&1 &
+          echo $! > /tmp/arc-companion-next.pid
+          for i in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:3000/ > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/arc-companion-next.log
+          exit 1
+
+      - name: Responsive browser smoke test
+        run: npm run qa:responsive
+
+      - name: Upload responsive QA screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: responsive-qa
+          path: artifacts/responsive
+          if-no-files-found: ignore
