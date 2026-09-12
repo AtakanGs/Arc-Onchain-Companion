@@ -43,6 +43,12 @@ export default async function CompanionSharePage({ params }: { params: Promise<{
     const family = FAMILIES[familyIndex] ?? FAMILIES[0];
     const archetype = ARCHETYPES[archetypeIndex] ?? "Unknown";
     const currentForm = formName(family, path, ascended);
+    const stats = [
+      ["FORM", currentForm],
+      ["LEVEL", level.toString()],
+      ["XP", Number(companion.xp).toString()],
+      ["STREAK", `🔥 ${Number(companion.currentStreak)}`],
+    ] as const;
 
     return (
       <main className="shell">
@@ -53,13 +59,15 @@ export default async function CompanionSharePage({ params }: { params: Promise<{
             <p className="eyebrow">PUBLIC ARC COMPANION</p>
             <h1 style={{ fontSize: "clamp(52px,7vw,92px)" }}>{companion.name}</h1>
             <p className="lede">{currentForm} · {family} family · {archetype} archetype</p>
-            <div className="statsGrid" style={{ marginTop: "32px" }}>
-              <div><span>FORM</span><strong>{currentForm}</strong></div>
-              <div><span>LEVEL</span><strong>{level.toString()}</strong></div>
-              <div><span>XP</span><strong>{Number(companion.xp)}</strong></div>
-              <div><span>STREAK</span><strong>🔥 {Number(companion.currentStreak)}</strong></div>
+            <div style={{ marginTop: "32px", display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "12px", maxWidth: "520px" }}>
+              {stats.map(([label, value]) => (
+                <div key={label} style={{ border: "1px solid rgba(255,255,255,.12)", borderRadius: "16px", padding: "16px", background: "rgba(255,255,255,.025)", display: "flex", flexDirection: "column", gap: "7px" }}>
+                  <span style={{ color: "#9da3b2", fontSize: "9px", letterSpacing: ".13em" }}>{label}</span>
+                  <strong style={{ fontSize: "18px", lineHeight: 1.2 }}>{value}</strong>
+                </div>
+              ))}
             </div>
-            <p className="micro">This page reads the companion state directly from Arc Testnet. No wallet connection is required to view it.</p>
+            <p className="micro" style={{ marginTop: "20px" }}>This page reads the companion state directly from Arc Testnet. No wallet connection is required to view it.</p>
             <a className="textLink" href="/">Discover your own companion</a>
           </div>
         </section>
