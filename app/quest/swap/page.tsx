@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { AppKit, type SwapParams } from "@circle-fin/app-kit";
 import { createViemAdapterFromProvider } from "@circle-fin/adapter-viem-v2";
 import type { EIP1193Provider } from "viem";
+import styles from "./swap.module.css";
 
 const ARC_CHAIN_ID_HEX = "0x4CEF52";
 const kit = new AppKit();
@@ -31,9 +32,16 @@ function errorMessage(cause: unknown) {
   return cause instanceof Error ? cause.message : "The Arc Testnet swap could not be completed.";
 }
 
+function formatRate(amountIn: string, amountOut?: string) {
+  const input = Number(amountIn);
+  const output = Number(amountOut);
+  if (!Number.isFinite(input) || input <= 0 || !Number.isFinite(output) || output <= 0) return "Available after quote";
+  return `1 USDC = ${(output / input).toFixed(4)} EURC`;
+}
+
 export default function ArcSwapQuestPage() {
   const [amount, setAmount] = useState("1.00");
-  const [slippageBps, setSlippageBps] = useState(100);
+  const [slippageBps, setSlippageBps] = useState(50);
   const [estimate, setEstimate] = useState<Estimate | null>(null);
   const [result, setResult] = useState<SwapResult | null>(null);
   const [status, setStatus] = useState<"idle" | "estimating" | "swapping" | "done" | "error">("idle");
@@ -43,6 +51,22 @@ export default function ArcSwapQuestPage() {
     const parsed = Number(amount);
     return Number.isFinite(parsed) && parsed > 0 && parsed <= 100;
   }, [amount]);
+
+  const outputAmount = estimate?.estimatedOutput?.amount;
+  const outputToken = estimate?.estimatedOutput?.token ?? "EURC";
+  const minimumAmount = estimate?.stopLimit?.amount;
+  const minimumToken = estimate?.stopLimit?.token ?? "EURC";
+  const rate = formatRate(amount, outputAmount);
+  const feeSummary = estimate?.fees?.length
+    ? estimate.fees.map((fee) => `${fee.amount ?? "—"} ${fee.token ?? ""}${fee.type ? ` · ${fee.type}` : ""}`).join(", ")
+    : "Included in live quote";
+
+  function resetQuote() {
+    setEstimate(null);
+    setResult(null);
+    setMessage("");
+    setStatus("idle");
+  }
 
   async function adapterAndParams() {
     if (!window.ethereum) throw new Error("No injected EVM wallet was found.");
@@ -97,37 +121,103 @@ export default function ArcSwapQuestPage() {
   return (
     <main className="shell">
       <nav className="nav"><strong>ARC COMPANION</strong><span className="network">ARC SWAP QUEST · TESTNET</span></nav>
-      <section className="homeEmpty" style={{ maxWidth: 780 }}>
-        <p className="eyebrow">REAL ONCHAIN QUEST</p>
-        <h1>Swap USDC to EURC.</h1>
-        <p className="lede">This quest uses Circle App Kit with your injected browser wallet. It first requests a live Arc Testnet estimate; the swap button stays unavailable until a quote exists.</p>
 
-        <div className="statsGrid" style={{ marginTop: 28 }}>
-          <label><span>AMOUNT IN · USDC</span><input value={amount} onChange={(event) => { setAmount(event.target.value); setEstimate(null); }} inputMode="decimal" /></label>
-          <label><span>SLIPPAGE</span><select value={slippageBps} onChange={(event) => { setSlippageBps(Number(event.target.value)); setEstimate(null); }}><option value={50}>0.5%</option><option value={100}>1.0%</option><option value={200}>2.0%</option><option value={300}>3.0%</option></select></label>
+      <section className={styles.page}>
+        <div className={styles.intro}>
+          <p className="eyebrow">REAL ONCHAIN QUEST</p>
+          <h1>Swap USDC to EURC.</h1>
+          <p className="lede">Use Circle App Kit on Arc Testnet to fetch a live quote and complete a real onchain swap. Nothing is simulated: the quest is verified only after App Kit returns a completed transaction and transaction hash.</p>
+          <div className={styles.trustRow}>
+            <span className={styles.trustPill}><i className={styles.trustDot} />Circle App Kit</span>
+            <span className={styles.trustPill}>Arc Testnet</span>
+            <span className={styles.trustPill}>Live quote required</span>
+          </div>
+          <a className={styles.backLink} href="/home">← Return to Companion Home</a>
         </div>
 
-        <button onClick={getEstimate} disabled={!validAmount || status === "estimating" || status === "swapping"}>{status === "estimating" ? "Getting live quote…" : "Get live quote"}</button>
-
-        {estimate && (
-          <div className="chosenEvolution" style={{ marginTop: 24 }}>
-            <div><span>ESTIMATED OUTPUT</span><strong>{estimate.estimatedOutput?.amount ?? "—"} {estimate.estimatedOutput?.token ?? "EURC"}</strong><p>Quoted by Circle App Kit on Arc Testnet.</p></div>
-            <div><span>MINIMUM / STOP LIMIT</span><strong>{estimate.stopLimit?.amount ?? "SDK protected"} {estimate.stopLimit?.token ?? "EURC"}</strong><p>{slippageBps / 100}% slippage tolerance.</p></div>
+        <div className={styles.swapShell}>
+          <div className={styles.swapHeader}>
+            <div className={styles.swapHeaderTitle}>
+              <strong>Swap Quest</strong>
+              <span>USDC → EURC · Arc Testnet</span>
+            </div>
+            <label className={styles.settings}>
+              <span>Slippage</span>
+              <select
+                value={slippageBps}
+                onChange={(event) => { setSlippageBps(Number(event.target.value)); resetQuote(); }}
+                aria-label="Slippage tolerance"
+              >
+                <option value={50}>0.5%</option>
+                <option value={100}>1.0%</option>
+                <option value={200}>2.0%</option>
+                <option value={300}>3.0%</option>
+              </select>
+            </label>
           </div>
-        )}
 
-        {estimate && !result && <button onClick={executeSwap} disabled={status === "swapping"}>{status === "swapping" ? "Confirm in wallet…" : `Swap ${amount} USDC → EURC`}</button>}
-
-        {result && (
-          <div className="evolutionConfirm" style={{ marginTop: 24 }}>
-            <div><span>QUEST VERIFIED</span><strong>{result.amountOut ?? estimate?.estimatedOutput?.amount ?? "—"} EURC received</strong><p>The App Kit result reported a completed Arc Testnet transaction.</p></div>
-            {result.explorerUrl && <a className="textLink" href={result.explorerUrl} target="_blank" rel="noreferrer">Verify on ArcScan ↗</a>}
+          <div className={styles.tokenPanel}>
+            <div className={styles.tokenTopline}><span>You pay</span><span>USDC</span></div>
+            <div className={styles.tokenRow}>
+              <input
+                className={styles.amountInput}
+                value={amount}
+                onChange={(event) => { setAmount(event.target.value); resetQuote(); }}
+                inputMode="decimal"
+                aria-label="USDC amount to swap"
+                placeholder="0.00"
+              />
+              <div className={styles.tokenPill}><i className={styles.tokenIcon}>$</i>USDC</div>
+            </div>
           </div>
-        )}
 
-        {message && <p className="errorText">{message}</p>}
-        <p className="micro">Arc Testnet liquidity can be unstable. Review the live quote before signing. This page never simulates success: quest completion requires a returned transaction hash and completed App Kit status.</p>
-        <a className="textLink" href="/home">Return to Companion Home</a>
+          <div className={styles.flowButton} aria-hidden="true">↓</div>
+
+          <div className={styles.tokenPanel}>
+            <div className={styles.tokenTopline}><span>You receive</span><span>Estimated</span></div>
+            <div className={styles.tokenRow}>
+              <div className={`${styles.receiveValue} ${!outputAmount ? styles.muted : ""}`}>{outputAmount ?? "—"}</div>
+              <div className={styles.tokenPill}><i className={`${styles.tokenIcon} ${styles.tokenIconEurc}`}>€</i>{outputToken}</div>
+            </div>
+          </div>
+
+          <div className={styles.quoteSection}>
+            <div className={styles.quoteHeader}>
+              <span>Live quote details</span>
+              {estimate ? <span className={styles.statusReady}>Quote ready</span> : <span>Waiting for quote</span>}
+            </div>
+            <div className={styles.quoteGrid}>
+              <div className={styles.quoteRow}><span>Rate</span><strong>{rate}</strong></div>
+              <div className={styles.quoteRow}><span>Minimum received</span><strong>{minimumAmount ? `${minimumAmount} ${minimumToken}` : "Available after quote"}</strong></div>
+              <div className={styles.quoteRow}><span>Slippage tolerance</span><strong>{slippageBps / 100}%</strong></div>
+              <div className={styles.quoteRow}><span>Route</span><strong>Circle App Kit</strong></div>
+              {estimate && <div className={styles.quoteRow}><span>Fees</span><strong>{feeSummary}</strong></div>}
+            </div>
+          </div>
+
+          {!estimate && !result && (
+            <button className={styles.primaryButton} onClick={getEstimate} disabled={!validAmount || status === "estimating" || status === "swapping"}>
+              {status === "estimating" ? "Fetching live quote…" : validAmount ? "Get live quote" : "Enter an amount"}
+            </button>
+          )}
+
+          {estimate && !result && (
+            <button className={styles.primaryButton} onClick={executeSwap} disabled={status === "swapping"}>
+              {status === "swapping" ? "Confirm in wallet…" : `Swap ${amount} USDC → ${outputToken}`}
+            </button>
+          )}
+
+          {result && (
+            <div className={styles.success}>
+              <span>QUEST VERIFIED</span>
+              <strong>{result.amountOut ?? outputAmount ?? "—"} EURC received</strong>
+              {result.explorerUrl && <a href={result.explorerUrl} target="_blank" rel="noreferrer">Verify transaction on ArcScan ↗</a>}
+            </div>
+          )}
+
+          {message && <div className={styles.error}>{message}</div>}
+          <p className={styles.disclaimer}>Arc Testnet liquidity can vary. Always review the live output, minimum received and slippage before signing. Quest completion requires a returned transaction hash and completed App Kit status.</p>
+        </div>
       </section>
     </main>
   );
