@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createWalletClient, custom, keccak256 } from "viem";
 import { arcTestnet } from "viem/chains";
@@ -69,6 +69,37 @@ export default function Home() {
     return { archetype: ARCHETYPES[archetypeIndex], archetypeIndex, family: FAMILIES[familyIndex], familyIndex, dna };
   }, [address, answers]);
 
+  async function companionTokenFor(walletAddress: string) {
+    return arcPublicClient.readContract({
+      address: arcCompanionAddress,
+      abi: arcCompanionAbi,
+      functionName: "companionOf",
+      args: [walletAddress as `0x${string}`],
+    });
+  }
+
+  useEffect(() => {
+    const ethereum = (window as Window & { ethereum?: EthereumProvider }).ethereum;
+    if (!ethereum) return;
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        const accounts = await ethereum.request({ method: "eth_accounts" }) as string[];
+        const walletAddress = accounts[0];
+        if (!walletAddress || cancelled) return;
+        const tokenId = await companionTokenFor(walletAddress);
+        if (cancelled) return;
+        setAddress(walletAddress);
+        if (tokenId > 0n) router.replace("/home");
+      } catch {
+        // Silent restore is best-effort. The explicit connect flow surfaces errors.
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [router]);
+
   async function resolveBirth(walletAddress: string) {
     setBirth({ status: "loading" });
     try {
@@ -95,7 +126,17 @@ export default function Home() {
           rpcUrls: ["https://rpc.testnet.arc.network"], blockExplorerUrls: ["https://testnet.arcscan.app"],
         }] });
       }
-      setAddress(accounts[0]); setStep("quiz"); void resolveBirth(accounts[0]);
+
+      const walletAddress = accounts[0];
+      setAddress(walletAddress);
+      const tokenId = await companionTokenFor(walletAddress);
+      if (tokenId > 0n) {
+        router.push("/home");
+        return;
+      }
+
+      setStep("quiz");
+      void resolveBirth(walletAddress);
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Wallet connection was cancelled."); }
   }
 
@@ -123,10 +164,19 @@ export default function Home() {
 
     try {
       setMint({ status: "pending" });
+
+      const existingTokenId = await companionTokenFor(address);
+      if (existingTokenId > 0n) {
+        setMint({ status: "confirmed", message: "Companion already exists. Opening Companion Home…" });
+        router.replace("/home");
+        return;
+      }
+
       const walletClient = createWalletClient({ account: address as `0x${string}`, chain: arcTestnet, transport: custom(ethereum) });
       const bornOnArc = birth.status === "found" ? BigInt(birth.timestamp ?? 0) : 0n;
       const hash = await walletClient.writeContract({ address: arcCompanionAddress, abi: arcCompanionAbi, functionName: "mintCompanion", args: [bornOnArc, result.archetypeIndex, trimmedName] });
-      await arcPublicClient.waitForTransactionReceipt({ hash });
+      const receipt = await arcPublicClient.waitForTransactionReceipt({ hash });
+      if (receipt.status !== "success") throw new Error("Mint transaction reverted. No companion was created.");
       setMint({ status: "confirmed", hash });
       router.push("/home");
     } catch (cause) { setMint({ status: "error", message: cause instanceof Error ? cause.message : "Mint failed." }); }
@@ -154,7 +204,7 @@ export default function Home() {
           {birth.status === "new" && <p className="micro">No prior Arc transaction was found. The mint block timestamp will become this companion&apos;s onchain birth time.</p>}
           <div className="nameBlock"><label htmlFor="companion-name">NAME YOUR COMPANION</label><input id="companion-name" value={name} maxLength={24} onChange={(event) => setName(event.target.value)} placeholder="2–24 characters" disabled={mint.status === "confirmed"} /></div>
           {mint.status === "error" && <p className="errorText">{mint.message}</p>}
-          {mint.status === "confirmed" && <p className="successText">Born on Arc ✓ Opening Companion Home…</p>}
+          {mint.status === "confirmed" && <p className="successText">{mint.message ?? "Born on Arc ✓ Opening Companion Home…"}</p>}
           <div className="revealActions"><button onClick={mintCompanion} disabled={mint.status === "pending" || mint.status === "confirmed" || birth.status === "unavailable" || birth.status === "loading"}>{mint.status === "pending" ? "Minting on Arc…" : mint.status === "confirmed" ? "Opening Companion Home…" : "Mint my companion"}</button><button className="secondaryButton" onClick={restartQuiz} disabled={mint.status === "pending" || mint.status === "confirmed"}>Retake personality</button></div>
         </div>
         <CompanionVisual label={`${name.trim() || result.family} · ${result.archetype}`} mode="awake" familyIndex={result.familyIndex} archetypeIndex={result.archetypeIndex} />
