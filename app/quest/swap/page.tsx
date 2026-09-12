@@ -9,6 +9,8 @@ import styles from "./swap.module.css";
 const ARC_CHAIN_ID_HEX = "0x4CEF52";
 const kit = new AppKit();
 const SLIPPAGE_PRESETS = [0.5, 1, 2] as const;
+const TOKENS = ["USDC", "EURC"] as const;
+type Token = (typeof TOKENS)[number];
 
 type Estimate = {
   estimatedOutput?: { amount?: string; token?: string };
@@ -33,19 +35,26 @@ function errorMessage(cause: unknown) {
   return cause instanceof Error ? cause.message : "The Arc Testnet swap could not be completed.";
 }
 
-function formatRate(amountIn: string, amountOut?: string) {
+function formatRate(amountIn: string, amountOut: string | undefined, tokenIn: Token, tokenOut: Token) {
   const input = Number(amountIn);
   const output = Number(amountOut);
   if (!Number.isFinite(input) || input <= 0 || !Number.isFinite(output) || output <= 0) return "Available after quote";
-  return `1 USDC = ${(output / input).toFixed(4)} EURC`;
+  return `1 ${tokenIn} = ${(output / input).toFixed(4)} ${tokenOut}`;
 }
 
 function formatPercent(value: number) {
   return Number.isInteger(value) ? value.toFixed(0) : value.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
 }
 
+function tokenSymbol(token: Token) {
+  return token === "USDC" ? "$" : "€";
+}
+
 export default function ArcSwapQuestPage() {
   const [amount, setAmount] = useState("1.00");
+  const [tokenIn, setTokenIn] = useState<Token>("USDC");
+  const [tokenOut, setTokenOut] = useState<Token>("EURC");
+  const [picker, setPicker] = useState<"in" | "out" | null>(null);
   const [slippagePct, setSlippagePct] = useState("0.5");
   const [estimate, setEstimate] = useState<Estimate | null>(null);
   const [result, setResult] = useState<SwapResult | null>(null);
@@ -62,10 +71,10 @@ export default function ArcSwapQuestPage() {
   const slippageBps = validSlippage ? Math.round(slippageValue * 100) : 50;
 
   const outputAmount = estimate?.estimatedOutput?.amount;
-  const outputToken = estimate?.estimatedOutput?.token ?? "EURC";
+  const outputToken = (estimate?.estimatedOutput?.token as Token | undefined) ?? tokenOut;
   const minimumAmount = estimate?.stopLimit?.amount;
-  const minimumToken = estimate?.stopLimit?.token ?? "EURC";
-  const rate = formatRate(amount, outputAmount);
+  const minimumToken = estimate?.stopLimit?.token ?? tokenOut;
+  const rate = formatRate(amount, outputAmount, tokenIn, tokenOut);
   const feeSummary = estimate?.fees?.length
     ? estimate.fees.map((fee) => `${fee.amount ?? "—"} ${fee.token ?? ""}${fee.type ? ` · ${fee.type}` : ""}`).join(", ")
     : "Included in live quote";
@@ -82,6 +91,35 @@ export default function ArcSwapQuestPage() {
     resetQuote();
   }
 
+  function switchDirection() {
+    const previousOutput = outputAmount;
+    setTokenIn(tokenOut);
+    setTokenOut(tokenIn);
+    if (previousOutput && Number(previousOutput) > 0) setAmount(previousOutput);
+    setPicker(null);
+    resetQuote();
+  }
+
+  function chooseToken(side: "in" | "out", token: Token) {
+    if (side === "in") {
+      if (token === tokenOut) {
+        setTokenIn(token);
+        setTokenOut(tokenIn);
+      } else {
+        setTokenIn(token);
+      }
+    } else {
+      if (token === tokenIn) {
+        setTokenOut(token);
+        setTokenIn(tokenOut);
+      } else {
+        setTokenOut(token);
+      }
+    }
+    setPicker(null);
+    resetQuote();
+  }
+
   async function adapterAndParams() {
     if (!window.ethereum) throw new Error("No injected EVM wallet was found.");
     if (!validSlippage) throw new Error("Set slippage between 0.1% and 5%.");
@@ -91,8 +129,8 @@ export default function ArcSwapQuestPage() {
     const adapter = await createViemAdapterFromProvider({ provider: window.ethereum });
     const params: SwapParams = {
       from: { adapter, chain: "Arc_Testnet" },
-      tokenIn: "USDC",
-      tokenOut: "EURC",
+      tokenIn,
+      tokenOut,
       amountIn: amount,
       config: { slippageBps },
     };
@@ -140,7 +178,7 @@ export default function ArcSwapQuestPage() {
       <section className={styles.page}>
         <div className={styles.intro}>
           <p className="eyebrow">REAL ONCHAIN QUEST</p>
-          <h1>Swap USDC to EURC.</h1>
+          <h1>Swap stablecoins on Arc.</h1>
           <p className="lede">Use Circle App Kit on Arc Testnet to fetch a live quote and complete a real onchain swap. Nothing is simulated: the quest is verified only after App Kit returns a completed transaction and transaction hash.</p>
           <div className={styles.trustRow}>
             <span className={styles.trustPill}><i className={styles.trustDot} />Circle App Kit</span>
@@ -154,7 +192,7 @@ export default function ArcSwapQuestPage() {
           <div className={styles.swapHeader}>
             <div className={styles.swapHeaderTitle}>
               <strong>Swap Quest</strong>
-              <span>USDC → EURC · Arc Testnet</span>
+              <span>{tokenIn} → {tokenOut} · Arc Testnet</span>
             </div>
             <span className={styles.headerBadge}>Stable pair</span>
           </div>
@@ -196,34 +234,69 @@ export default function ArcSwapQuestPage() {
           </div>
 
           <div className={styles.tokenPanel}>
-            <div className={styles.tokenTopline}><span>You pay</span><span>USDC</span></div>
+            <div className={styles.tokenTopline}><span>You pay</span><span>Arc Testnet</span></div>
             <div className={styles.tokenRow}>
               <input
                 className={styles.amountInput}
                 value={amount}
                 onChange={(event) => { setAmount(event.target.value); resetQuote(); }}
                 inputMode="decimal"
-                aria-label="USDC amount to swap"
+                aria-label={`${tokenIn} amount to swap`}
                 placeholder="0.00"
               />
-              <div className={styles.tokenPill}><i className={styles.tokenIcon}>$</i>USDC</div>
+              <div className={styles.tokenSelectWrap}>
+                <button type="button" className={styles.tokenPill} onClick={() => setPicker(picker === "in" ? null : "in")} aria-expanded={picker === "in"}>
+                  <i className={`${styles.tokenIcon} ${tokenIn === "EURC" ? styles.tokenIconEurc : ""}`}>{tokenSymbol(tokenIn)}</i>{tokenIn}<span className={styles.chevron}>⌄</span>
+                </button>
+                {picker === "in" && (
+                  <div className={styles.tokenMenu}>
+                    <span>Select token</span>
+                    {TOKENS.map((token) => (
+                      <button key={token} type="button" className={styles.tokenOption} onClick={() => chooseToken("in", token)}>
+                        <i className={`${styles.tokenIcon} ${token === "EURC" ? styles.tokenIconEurc : ""}`}>{tokenSymbol(token)}</i>
+                        <div><strong>{token}</strong><small>{token === "USDC" ? "USD Coin" : "Euro Coin"}</small></div>
+                        {token === tokenIn && <b>✓</b>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          <div className={styles.flowButton} aria-hidden="true">↓</div>
+          <button type="button" className={styles.flowButton} onClick={switchDirection} aria-label="Switch swap direction" title="Switch direction">⇅</button>
 
           <div className={styles.tokenPanel}>
             <div className={styles.tokenTopline}><span>You receive</span><span>Estimated</span></div>
             <div className={styles.tokenRow}>
               <div className={`${styles.receiveValue} ${!outputAmount ? styles.muted : ""}`}>{outputAmount ?? "—"}</div>
-              <div className={styles.tokenPill}><i className={`${styles.tokenIcon} ${styles.tokenIconEurc}`}>€</i>{outputToken}</div>
+              <div className={styles.tokenSelectWrap}>
+                <button type="button" className={styles.tokenPill} onClick={() => setPicker(picker === "out" ? null : "out")} aria-expanded={picker === "out"}>
+                  <i className={`${styles.tokenIcon} ${tokenOut === "EURC" ? styles.tokenIconEurc : ""}`}>{tokenSymbol(tokenOut)}</i>{tokenOut}<span className={styles.chevron}>⌄</span>
+                </button>
+                {picker === "out" && (
+                  <div className={styles.tokenMenu}>
+                    <span>Select token</span>
+                    {TOKENS.map((token) => (
+                      <button key={token} type="button" className={styles.tokenOption} onClick={() => chooseToken("out", token)}>
+                        <i className={`${styles.tokenIcon} ${token === "EURC" ? styles.tokenIconEurc : ""}`}>{tokenSymbol(token)}</i>
+                        <div><strong>{token}</strong><small>{token === "USDC" ? "USD Coin" : "Euro Coin"}</small></div>
+                        {token === tokenOut && <b>✓</b>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
           <div className={styles.quoteSection}>
             <div className={styles.quoteHeader}>
               <span>Live quote details</span>
-              {estimate ? <span className={styles.statusReady}>Quote ready</span> : <span>Waiting for quote</span>}
+              <div className={styles.quoteHeaderActions}>
+                {estimate && <button type="button" className={styles.refreshButton} onClick={getEstimate} disabled={status === "estimating" || status === "swapping"} title="Refresh live quote">{status === "estimating" ? "Refreshing…" : "↻ Refresh"}</button>}
+                {estimate ? <span className={styles.statusReady}>Quote ready</span> : <span>Waiting for quote</span>}
+              </div>
             </div>
             <div className={styles.quoteGrid}>
               <div className={styles.quoteRow}><span>Rate</span><strong>{rate}</strong></div>
@@ -236,20 +309,20 @@ export default function ArcSwapQuestPage() {
 
           {!estimate && !result && (
             <button className={styles.primaryButton} onClick={getEstimate} disabled={!validAmount || !validSlippage || status === "estimating" || status === "swapping"}>
-              {status === "estimating" ? "Fetching live quote…" : !validSlippage ? "Set valid slippage" : validAmount ? "Get live quote" : "Enter an amount"}
+              {status === "estimating" ? "Fetching live quote…" : !validSlippage ? "Set valid slippage" : validAmount ? `Get ${tokenIn} → ${tokenOut} quote` : "Enter an amount"}
             </button>
           )}
 
           {estimate && !result && (
             <button className={styles.primaryButton} onClick={executeSwap} disabled={!validSlippage || status === "swapping"}>
-              {status === "swapping" ? "Confirm in wallet…" : `Swap ${amount} USDC → ${outputToken}`}
+              {status === "swapping" ? "Confirm in wallet…" : `Swap ${amount} ${tokenIn} → ${outputToken}`}
             </button>
           )}
 
           {result && (
             <div className={styles.success}>
               <span>QUEST VERIFIED</span>
-              <strong>{result.amountOut ?? outputAmount ?? "—"} EURC received</strong>
+              <strong>{result.amountOut ?? outputAmount ?? "—"} {tokenOut} received</strong>
               {result.explorerUrl && <a href={result.explorerUrl} target="_blank" rel="noreferrer">Verify transaction on ArcScan ↗</a>}
             </div>
           )}
