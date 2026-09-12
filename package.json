@@ -18,6 +18,7 @@
     "contracts:compile": "hardhat compile",
     "contracts:test": "hardhat test",
     "test": "npm run contracts:test",
+    "qa:responsive": "node scripts/responsive-smoke.cjs",
     "ci": "npm run verify:art && npm run contracts:compile && npm run contracts:test && npm run typecheck && npm run build",
     "preflight:arc": "hardhat run scripts/preflight.cjs --network arcTestnet",
     "deploy:arc": "hardhat run scripts/deploy.cjs --network arcTestnet"
@@ -41,6 +42,7 @@
     "dotenv": "16.6.1",
     "ethers": "6.15.0",
     "hardhat": "2.28.6",
+    "playwright": "1.55.0",
     "typescript": "5.9.2"
   },
   "engines": {
