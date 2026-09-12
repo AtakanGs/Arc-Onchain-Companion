@@ -20,6 +20,11 @@ Arc Companion is a consumer dApp for Arc Testnet. Each wallet discovers a unique
 - Real Circle App Kit Arc Testnet swap quest at `/quest/swap` with live estimate, slippage control and completed-transaction verification.
 - Dynamic metadata base URI foundation.
 
+## Release status
+Builder V1 implementation is feature-complete and the automated quality gate is green. The final remaining release gate is a manual Arc Testnet pass with a real wallet: mint, daily care, evolution test state, public share, one real USDC → EURC swap, and responsive screenshots.
+
+Track the remaining release work in GitHub issue #21 and `docs/FINAL_QA.md`.
+
 ## Evolution trees
 ### Vexa
 - Vexa → Veyra → Veyrion
@@ -31,7 +36,7 @@ Veyrion and Vexaris use the locked production artwork and are revealed at the As
 - Noma → Nymora → Nymoria
 - Noma → Noryx → Noryth
 
-Nymora, Nymoria, Noryx and Noryth use the locked production artwork. Evolved forms appear after the permanent path choice and Ascended forms are revealed at the 100-day milestone.
+Nymora, Nymoria, Noryx and Noryth use the locked production artwork. Evolved forms appear after the permanent path choice and Ascended forms are revealed at the 100-day milestone. Evolution-choice previews use a unified portrait frame while preserving the full-background locked illustrations.
 
 ### Koru
 - Koru → Koraya → Koralith
@@ -60,10 +65,16 @@ npm run contracts:test
 npm run dev
 ```
 
+For the complete local release gate:
+
+```bash
+npm run ci
+```
+
 ## Quality gate
 GitHub Actions runs artwork verification, contract compilation, contract tests, TypeScript checking and a production frontend build on pushes to `main` and pull requests.
 
-Use `docs/FINAL_QA.md` as the final release checklist before calling Builder V1 complete.
+Artwork verification covers Vexa, Koru, and the locked advanced Noma/Vexa assets. Use `docs/FINAL_QA.md` as the manual release checklist before calling Builder V1 fully released.
 
 ## Circle / Arc App Kit quest
 `/quest/swap` performs a real Arc Testnet USDC → EURC swap using Circle App Kit and the injected browser wallet. The UI requests a live estimate first, exposes slippage tolerance, and only reports completion after App Kit returns a transaction hash and completed status. Arc Testnet liquidity can be unstable, so the final real-wallet release check must still review the live quote before signing.
