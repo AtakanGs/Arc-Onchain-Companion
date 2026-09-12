@@ -51,19 +51,28 @@ export default async function CompanionSharePage({ params }: { params: Promise<{
     ] as const;
 
     return (
-      <main className="shell">
+      <main className="shell" style={{ overflowX: "clip" }}>
         <nav className="nav"><strong>ARC COMPANION</strong><span className="network">PUBLIC SIGNAL · TOKEN #{tokenId.toString()}</span></nav>
-        <section style={{ minHeight: "720px", display: "grid", gridTemplateColumns: "minmax(300px, 520px) 1fr", gap: "56px", alignItems: "center" }}>
-          <CompanionVisual label={`${companion.name} · Level ${level.toString()}`} mode="awake" familyIndex={familyIndex} archetypeIndex={archetypeIndex} evolutionPath={path} ascended={ascended} />
-          <div>
+        <section style={{
+          minHeight: "720px",
+          width: "100%",
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))",
+          gap: "clamp(28px, 5vw, 56px)",
+          alignItems: "center",
+        }}>
+          <div style={{ minWidth: 0, width: "100%", maxWidth: "520px", justifySelf: "center" }}>
+            <CompanionVisual label={`${companion.name} · Level ${level.toString()}`} mode="awake" familyIndex={familyIndex} archetypeIndex={archetypeIndex} evolutionPath={path} ascended={ascended} />
+          </div>
+          <div style={{ minWidth: 0, width: "100%" }}>
             <p className="eyebrow">PUBLIC ARC COMPANION</p>
-            <h1 style={{ fontSize: "clamp(52px,7vw,92px)" }}>{companion.name}</h1>
+            <h1 style={{ fontSize: "clamp(44px,7vw,92px)", overflowWrap: "anywhere" }}>{companion.name}</h1>
             <p className="lede">{currentForm} · {family} family · {archetype} archetype</p>
-            <div style={{ marginTop: "32px", display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "12px", maxWidth: "520px" }}>
+            <div style={{ marginTop: "32px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 150px), 1fr))", gap: "12px", maxWidth: "520px" }}>
               {stats.map(([label, value]) => (
-                <div key={label} style={{ border: "1px solid rgba(255,255,255,.12)", borderRadius: "16px", padding: "16px", background: "rgba(255,255,255,.025)", display: "flex", flexDirection: "column", gap: "7px" }}>
+                <div key={label} style={{ minWidth: 0, border: "1px solid rgba(255,255,255,.12)", borderRadius: "16px", padding: "16px", background: "rgba(255,255,255,.025)", display: "flex", flexDirection: "column", gap: "7px" }}>
                   <span style={{ color: "#9da3b2", fontSize: "9px", letterSpacing: ".13em" }}>{label}</span>
-                  <strong style={{ fontSize: "18px", lineHeight: 1.2 }}>{value}</strong>
+                  <strong style={{ fontSize: "18px", lineHeight: 1.2, overflowWrap: "anywhere" }}>{value}</strong>
                 </div>
               ))}
             </div>
