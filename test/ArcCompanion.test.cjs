@@ -110,11 +110,37 @@ describe("ArcCompanion", function () {
     }
 
     const tokenId = await contract.companionOf(alice.address);
+    const beforeEvolution = await contract.companion(tokenId);
+    expect(beforeEvolution.xp).to.equal(1040n);
+
     await contract.connect(alice).chooseEvolution(1);
     const c = await contract.companion(tokenId);
     expect(c.evolutionPath).to.equal(1n);
 
     await expect(contract.connect(alice).chooseEvolution(2))
       .to.be.revertedWithCustomError(contract, "EvolutionAlreadyChosen");
+  });
+
+  it("reaches the 100-day milestone and keeps the permanent evolution path", async function () {
+    const { contract, alice } = await deploy();
+    const block = await ethers.provider.getBlock("latest");
+    await contract.connect(alice).mintCompanion(block.timestamp - DAY, 0, "Ascender");
+
+    for (let day = 1; day <= 100; day++) {
+      if (day > 1) await nextDay();
+      await contract.connect(alice).completeDailyCare(1 | 2 | 4);
+      if (day === 8) await contract.connect(alice).chooseEvolution(1);
+    }
+
+    const tokenId = await contract.companionOf(alice.address);
+    const c = await contract.companion(tokenId);
+
+    expect(c.currentStreak).to.equal(100n);
+    expect(c.longestStreak).to.equal(100n);
+    expect(c.xp).to.equal(13000n);
+    expect(c.evolutionPath).to.equal(1n);
+    expect(c.milestoneFlags & 1n).to.equal(1n);
+    expect(c.milestoneFlags & 2n).to.equal(2n);
+    expect(c.milestoneFlags & 4n).to.equal(4n);
   });
 });
