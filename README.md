@@ -21,9 +21,9 @@ Arc Companion is a consumer dApp for Arc Testnet. Each wallet discovers a unique
 - Dynamic metadata base URI foundation.
 
 ## Release status
-Builder V1 implementation is feature-complete and the automated quality gate is green. The final remaining release gate is a manual Arc Testnet pass with a real wallet: mint, daily care, evolution test state, public share, one real USDC → EURC swap, and responsive screenshots.
+Builder V1 is release-ready. The automated quality gate is green and the required Arc Testnet QA pass is complete. GitHub issue #21 is closed as completed.
 
-Track the remaining release work in GitHub issue #21 and `docs/FINAL_QA.md`.
+The project owner intentionally waived two non-blocking manual checks for this release: a separate deterministic-family / Genesis-visual confirmation pass and a curated final screenshot set. Automated responsive screenshots remain available as CI artifacts.
 
 ## Evolution trees
 ### Vexa
@@ -72,12 +72,14 @@ npm run ci
 ```
 
 ## Quality gate
-GitHub Actions runs artwork verification, contract compilation, contract tests, TypeScript checking and a production frontend build on pushes to `main` and pull requests.
+GitHub Actions runs artwork verification, contract compilation, contract tests, TypeScript checking, a production frontend build, and responsive browser QA on pushes to `main` and pull requests.
 
-Artwork verification covers Vexa, Koru, and the locked advanced Noma/Vexa assets. Use `docs/FINAL_QA.md` as the manual release checklist before calling Builder V1 fully released.
+Artwork verification covers Vexa, Koru, and the locked advanced Noma/Vexa assets. `docs/FINAL_QA.md` records the Builder V1 release evidence and intentionally skipped non-blockers.
 
 ## Circle / Arc App Kit quest
-`/quest/swap` performs a real Arc Testnet USDC → EURC swap using Circle App Kit and the injected browser wallet. The UI requests a live estimate first, exposes slippage tolerance, and only reports completion after App Kit returns a transaction hash and completed status. Arc Testnet liquidity can be unstable, so the final real-wallet release check must still review the live quote before signing.
+`/quest/swap` performs a real Arc Testnet USDC ↔ EURC swap using Circle App Kit and the injected browser wallet. The UI requests a live estimate first, exposes slippage tolerance, and only reports completion after App Kit returns a transaction hash and completed status.
+
+Builder V1 QA includes a completed Arc Testnet swap transaction and ArcScan link verification.
 
 ## Deploy
 Use a dedicated Arc Testnet deployer wallet when possible. Never commit or share its private key. Put `DEPLOYER_PRIVATE_KEY` only in the ignored local `.env` file and fund the address with Arc Testnet USDC from the Circle Faucet.
